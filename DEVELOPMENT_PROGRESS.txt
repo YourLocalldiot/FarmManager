@@ -1,0 +1,5 @@
+Farm Manager App Development Progress
+
+- June 7: The app project was initially created by prompt engineering with ChatGPT, then developed with Antigravity. This setup included the basic files, structure, and UI for the application.
+Future deployment to Zalo Mini App will be enacted once this app is ready. The UI is based on Google Chat.
+
