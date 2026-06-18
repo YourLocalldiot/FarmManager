@@ -4,13 +4,27 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import MapIcon from '@mui/icons-material/Map';
 import QrCodeIcon from '@mui/icons-material/QrCode2';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import AddIcon from '@mui/icons-material/Add';
+import { useNavigate } from 'react-router-dom';
 
 const BioPass: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ p: 2, pb: 10 }}>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-        BioPass
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          BioPass
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/biopass/new')}
+        >
+          New Declaration
+        </Button>
+      </Box>
 
       {/* Status Card */}
       <Card sx={{ mb: 3, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
