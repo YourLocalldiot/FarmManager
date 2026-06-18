@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Stepper, Step, StepLabel, Button, Card, CardContent, CircularProgress } from '@mui/material';
+import { Box, Typography, Stepper, Step, StepLabel, Button, Card, CardContent, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { BioPassRecord } from '../../types/biopass';
@@ -49,6 +49,8 @@ const BioPassWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [recordData, setRecordData] = useState<Partial<BioPassRecord>>(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -63,6 +65,23 @@ const BioPassWizard: React.FC = () => {
       ...prev,
       [key]: data
     }));
+  };
+
+  const handleSaveDraft = async () => {
+    setIsSavingDraft(true);
+    try {
+      const recordId = recordData.id as string;
+      await biopassService.saveFullRecord(recordId, {
+        ...recordData,
+        status: 'Draft'
+      });
+      setSnackbarMessage('Draft saved successfully!');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      alert('Failed to save draft.');
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -145,7 +164,7 @@ const BioPassWizard: React.FC = () => {
       <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
         <Button
           color="inherit"
-          disabled={activeStep === 0 || isSubmitting}
+          disabled={activeStep === 0 || isSubmitting || isSavingDraft}
           onClick={handleBack}
           sx={{ mr: 1 }}
           variant="outlined"
@@ -153,6 +172,15 @@ const BioPassWizard: React.FC = () => {
           Back
         </Button>
         <Box sx={{ flex: '1 1 auto' }} />
+        <Button
+          color="secondary"
+          variant="outlined"
+          sx={{ mr: 2 }}
+          onClick={handleSaveDraft}
+          disabled={isSubmitting || isSavingDraft}
+        >
+          {isSavingDraft ? 'Saving...' : 'Save Draft'}
+        </Button>
         {activeStep === steps.length - 1 ? (
           <Button 
             onClick={handleSubmit} 
@@ -169,6 +197,17 @@ const BioPassWizard: React.FC = () => {
           </Button>
         )}
       </Box>
+
+      <Snackbar 
+        open={!!snackbarMessage} 
+        autoHideDuration={4000} 
+        onClose={() => setSnackbarMessage('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarMessage('')} severity="success" sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

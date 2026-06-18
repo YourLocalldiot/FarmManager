@@ -1,6 +1,6 @@
 import { db, storage } from '../config/firebase';
-import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
 import type { BioPassRecord } from '../types/biopass';
 
 export const biopassService = {
@@ -17,7 +17,7 @@ export const biopassService = {
 
   saveFullRecord: async (recordId: string, data: Partial<BioPassRecord>) => {
     const docRef = doc(db, 'biopass', recordId);
-    await updateDoc(docRef, data);
+    await setDoc(docRef, data, { merge: true });
   },
 
   uploadEvidenceFile: async (file: File, recordId: string): Promise<string> => {
@@ -27,11 +27,8 @@ export const biopassService = {
   },
   
   uploadSignatureImage: async (dataUrl: string, recordId: string): Promise<string> => {
-    // Convert base64 to blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
     const storageRef = ref(storage, `biopass/${recordId}/signature.png`);
-    const snapshot = await uploadBytes(storageRef, blob);
+    const snapshot = await uploadString(storageRef, dataUrl, 'data_url');
     return await getDownloadURL(snapshot.ref);
   }
 };
