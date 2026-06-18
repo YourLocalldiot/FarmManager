@@ -5,8 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { BioPassRecord } from '../../types/biopass';
 import { biopassService } from '../../services/biopassService';
 import { generateComplianceDataJSON, generateFarmBoundaryGeoJSON, generateComplianceReportPDF } from '../../utils/exportUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
-// Step Components (to be created)
 import CommodityStep from './components/CommodityStep';
 import SupplyChainStep from './components/SupplyChainStep';
 import GeolocationStep from './components/GeolocationStep';
@@ -25,60 +25,63 @@ const steps = [
   'Declaration'
 ];
 
-const initialData: Partial<BioPassRecord> = {
-  id: uuidv4(),
-  commodity: {
-    type: '',
-    description: '',
-    hsCode: '',
-    quantity: 0,
-    unit: 'kg',
-    productionCountry: '',
-    productionYear: new Date().getFullYear().toString()
-  },
-  supplyChain: [],
-  plots: [],
-  evidence: [],
-  riskAssessment: [],
-  mitigation: [],
-  status: 'Draft'
-};
-
 const BioPassWizard: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  const recordId = React.useRef(uuidv4()).current;
+
   const [activeStep, setActiveStep] = useState(0);
-  const [recordData, setRecordData] = useState<Partial<BioPassRecord>>(initialData);
+  const [recordData, setRecordData] = useState<Partial<BioPassRecord>>({
+    id: recordId,
+    userId: currentUser?.uid ?? 'anonymous',
+    commodity: {
+      type: '',
+      description: '',
+      hsCode: '',
+      quantity: 0,
+      unit: 'Tonnes',
+      productionCountry: '',
+      productionYear: new Date().getFullYear().toString()
+    },
+    supplyChain: [],
+    plots: [],
+    evidence: [],
+    riskAssessment: [],
+    mitigation: [],
+    status: 'Draft'
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
+  const handleNext = () => setActiveStep((s) => s + 1);
+  const handleBack = () => setActiveStep((s) => s - 1);
 
   const handleUpdateData = (key: keyof BioPassRecord, data: any) => {
-    setRecordData(prev => ({
-      ...prev,
-      [key]: data
-    }));
+    setRecordData(prev => ({ ...prev, [key]: data }));
   };
 
   const handleSaveDraft = async () => {
     setIsSavingDraft(true);
     try {
-      const recordId = recordData.id as string;
       await biopassService.saveFullRecord(recordId, {
         ...recordData,
-        status: 'Draft'
+        status: 'Draft',
+        userId: currentUser?.uid ?? 'anonymous',
       });
-      setSnackbarMessage('Draft saved successfully!');
-    } catch (error) {
+      showSnackbar('Draft saved successfully!');
+    } catch (error: any) {
       console.error('Error saving draft:', error);
-      alert('Failed to save draft.');
+      showSnackbar(error.message || 'Failed to save draft.', 'error');
     } finally {
       setIsSavingDraft(false);
     }
@@ -87,12 +90,10 @@ const BioPassWizard: React.FC = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Mock user ID for now
-      const userId = 'user_123';
-      const recordId = recordData.id || await biopassService.createRecord(userId);
       await biopassService.saveFullRecord(recordId, {
         ...recordData,
-        status: 'Submitted'
+        status: 'Submitted',
+        userId: currentUser?.uid ?? 'anonymous',
       });
 
       // Generate Exports
@@ -100,11 +101,10 @@ const BioPassWizard: React.FC = () => {
       generateFarmBoundaryGeoJSON(recordData);
       generateComplianceReportPDF(recordData);
 
-      // Redirect or show success
       navigate('/biopass', { state: { message: 'BioPass declaration submitted successfully!' } });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting BioPass:', error);
-      alert('Failed to submit. Please try again.');
+      showSnackbar(error.message || 'Failed to submit. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -119,13 +119,13 @@ const BioPassWizard: React.FC = () => {
       case 2:
         return <GeolocationStep data={recordData.plots} updateData={(data) => handleUpdateData('plots', data)} />;
       case 3:
-        return <EvidenceStep data={recordData.evidence} updateData={(data) => handleUpdateData('evidence', data)} recordId={recordData.id as string} />;
+        return <EvidenceStep data={recordData.evidence} updateData={(data) => handleUpdateData('evidence', data)} recordId={recordId} />;
       case 4:
         return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} />;
       case 5:
         return <MitigationStep data={recordData.mitigation} updateData={(data) => handleUpdateData('mitigation', data)} />;
       case 6:
-        return <DeclarationStep data={recordData.declaration} updateData={(data) => handleUpdateData('declaration', data)} recordId={recordData.id as string} />;
+        return <DeclarationStep data={recordData.declaration} updateData={(data) => handleUpdateData('declaration', data)} recordId={recordId} />;
       default:
         return <div>Unknown step</div>;
     }
@@ -179,17 +179,17 @@ const BioPassWizard: React.FC = () => {
           onClick={handleSaveDraft}
           disabled={isSubmitting || isSavingDraft}
         >
-          {isSavingDraft ? 'Saving...' : 'Save Draft'}
+          {isSavingDraft ? <><CircularProgress size={16} sx={{ mr: 1 }} />Saving...</> : 'Save Draft'}
         </Button>
         {activeStep === steps.length - 1 ? (
-          <Button 
-            onClick={handleSubmit} 
-            variant="contained" 
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
             color="primary"
             disabled={isSubmitting}
             startIcon={isSubmitting && <CircularProgress size={20} color="inherit" />}
           >
-            Submit & Export
+            {isSubmitting ? 'Submitting...' : 'Submit & Export'}
           </Button>
         ) : (
           <Button onClick={handleNext} variant="contained" color="primary">
@@ -198,14 +198,18 @@ const BioPassWizard: React.FC = () => {
         )}
       </Box>
 
-      <Snackbar 
-        open={!!snackbarMessage} 
-        autoHideDuration={4000} 
-        onClose={() => setSnackbarMessage('')}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbarMessage('')} severity="success" sx={{ width: '100%' }}>
-          {snackbarMessage}
+        <Alert
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>

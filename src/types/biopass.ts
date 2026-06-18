@@ -59,6 +59,8 @@ export interface DeclarationData {
 export interface BioPassRecord {
   id: string;
   createdAt: string;
+  updatedAt?: string;
+  userId?: string;
   status: string;
   commodity?: CommodityData;
   supplyChain?: SupplyChainActor[];
