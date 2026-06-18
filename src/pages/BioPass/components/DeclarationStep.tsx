@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react';
-import { Box, Typography, Button, Checkbox, FormControlLabel, CircularProgress } from '@mui/material';
-import SignatureCanvas from 'react-signature-canvas';
+import React, { useState } from 'react';
+import { Box, Typography, Checkbox, FormControlLabel, Paper } from '@mui/material';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import type { DeclarationData } from '../../../types/biopass';
-import { biopassService } from '../../../services/biopassService';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface DeclarationStepProps {
   data?: DeclarationData;
@@ -10,53 +10,76 @@ interface DeclarationStepProps {
   recordId: string;
 }
 
-const DeclarationStep: React.FC<DeclarationStepProps> = ({ data, updateData, recordId }) => {
-  const sigCanvas = useRef<SignatureCanvas>(null);
-  const [confirmed, setConfirmed] = useState(false);
-  const [isSavingSignature, setIsSavingSignature] = useState(false);
+const DeclarationStep: React.FC<DeclarationStepProps> = ({ data, updateData }) => {
+  const { currentUser, userProfile } = useAuth();
+  const [confirmed, setConfirmed] = useState(data?.userId ? true : false);
 
-  const clearSignature = () => {
-    sigCanvas.current?.clear();
-    if (data) {
-      updateData({ ...data, signatureUrl: '' });
-    }
-  };
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const formattedTime = now.toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
-  const saveSignature = async () => {
-    if (!sigCanvas.current || sigCanvas.current.isEmpty()) {
-      alert('Please provide a signature first.');
-      return;
-    }
-
-    setIsSavingSignature(true);
-    try {
-      // Get data URL from canvas
-      const dataUrl = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
-      
-      // Upload to Firebase Storage
-      const signatureUrl = await biopassService.uploadSignatureImage(dataUrl, recordId);
-
+  const handleConfirmChange = (checked: boolean) => {
+    setConfirmed(checked);
+    if (checked) {
       updateData({
-        signatureUrl,
-        timestamp: new Date().toISOString(),
-        userId: 'Current User' // Mock user ID
+        signatureUrl: '',
+        timestamp: now.toISOString(),
+        userId: currentUser?.uid ?? 'anonymous'
       });
-      
-    } catch (error) {
-      console.error('Error saving signature:', error);
-      alert('Failed to save signature.');
-    } finally {
-      setIsSavingSignature(false);
+    } else {
+      updateData({
+        signatureUrl: '',
+        timestamp: '',
+        userId: ''
+      });
     }
   };
+
+  const displayName = userProfile
+    ? [userProfile.firstName, userProfile.middleName, userProfile.lastName].filter(Boolean).join(' ')
+    : currentUser?.email ?? 'Unknown User';
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>Declaration & Signature</Typography>
-      
+      <Typography variant="h6" sx={{ mb: 3 }}>Declaration</Typography>
+
+      {/* Date box */}
+      <Paper
+        variant="outlined"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 1.5,
+          px: 2.5,
+          py: 1.5,
+          mb: 3,
+          borderRadius: 2,
+          bgcolor: 'action.hover'
+        }}
+      >
+        <CalendarTodayIcon fontSize="small" color="primary" />
+        <Box>
+          <Typography variant="caption" color="textSecondary" sx={{ display: 'block', lineHeight: 1.2 }}>
+            Date of Declaration
+          </Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {formattedDate} at {formattedTime}
+          </Typography>
+        </Box>
+      </Paper>
+
+      {/* Declaration text */}
       <Box sx={{ mb: 4, p: 3, bgcolor: 'background.default', borderRadius: 2 }}>
         <Typography variant="body1" sx={{ mb: 2 }}>
-          By signing this document, I declare that:
+          I, <strong>{displayName}</strong>, declare that:
         </Typography>
         <Typography variant="body2" component="ul" sx={{ pl: 3, mb: 3 }}>
           <li>The information provided in this compliance package is accurate and complete to the best of my knowledge.</li>
@@ -66,57 +89,22 @@ const DeclarationStep: React.FC<DeclarationStepProps> = ({ data, updateData, rec
         </Typography>
 
         <FormControlLabel
-          control={<Checkbox checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />}
+          control={
+            <Checkbox
+              checked={confirmed}
+              onChange={(e) => handleConfirmChange(e.target.checked)}
+              color="primary"
+            />
+          }
           label="I have reviewed all the provided information and confirm its accuracy."
         />
       </Box>
 
       {confirmed && (
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold',  mb: 1  }}>
-            Digital Signature
+        <Box sx={{ p: 2, border: '1px solid', borderColor: 'success.light', borderRadius: 2, bgcolor: 'success.light', opacity: 0.8 }}>
+          <Typography variant="body2" color="success.dark" sx={{ fontWeight: 600 }}>
+            ✓ Declaration confirmed on {formattedDate} at {formattedTime}
           </Typography>
-          
-          {!data?.signatureUrl ? (
-            <>
-              <Box sx={{ border: '2px dashed #ccc', borderRadius: 2, display: 'inline-block', mb: 2, bgcolor: '#fff' }}>
-                <SignatureCanvas
-                  ref={sigCanvas}
-                  penColor="black"
-                  canvasProps={{ width: 400, height: 200, className: 'sigCanvas' }}
-                />
-              </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button variant="outlined" onClick={clearSignature} disabled={isSavingSignature}>
-                  Clear
-                </Button>
-                <Button 
-                  variant="contained" 
-                  color="primary" 
-                  onClick={saveSignature}
-                  disabled={isSavingSignature}
-                  startIcon={isSavingSignature && <CircularProgress size={20} color="inherit" />}
-                >
-                  {isSavingSignature ? 'Saving...' : 'Save Signature'}
-                </Button>
-              </Box>
-            </>
-          ) : (
-            <Box>
-              <Box 
-                component="img" 
-                src={data.signatureUrl} 
-                alt="Signature" 
-                sx={{ height: 100, border: '1px solid #ccc', borderRadius: 1, mb: 2, bgcolor: '#fff', p: 1 }} 
-              />
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                Signed on: {new Date(data.timestamp).toLocaleString()}
-              </Typography>
-              <Button variant="outlined" color="error" onClick={clearSignature}>
-                Remove Signature
-              </Button>
-            </Box>
-          )}
         </Box>
       )}
     </Box>

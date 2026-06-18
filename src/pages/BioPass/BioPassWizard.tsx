@@ -12,7 +12,7 @@ import SupplyChainStep from './components/SupplyChainStep';
 import GeolocationStep from './components/GeolocationStep';
 import EvidenceStep from './components/EvidenceStep';
 import RiskAssessmentStep from './components/RiskAssessmentStep';
-import MitigationStep from './components/MitigationStep';
+
 import DeclarationStep from './components/DeclarationStep';
 
 const steps = [
@@ -21,7 +21,6 @@ const steps = [
   'Geolocation Collection',
   'Supporting Files',
   'Risk Assessment',
-  'Risk Mitigation',
   'Declaration'
 ];
 
@@ -48,7 +47,6 @@ const BioPassWizard: React.FC = () => {
     plots: [],
     evidence: [],
     riskAssessment: [],
-    mitigation: [],
     status: 'Draft'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,8 +121,6 @@ const BioPassWizard: React.FC = () => {
       case 4:
         return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} />;
       case 5:
-        return <MitigationStep data={recordData.mitigation} updateData={(data) => handleUpdateData('mitigation', data)} />;
-      case 6:
         return <DeclarationStep data={recordData.declaration} updateData={(data) => handleUpdateData('declaration', data)} recordId={recordId} />;
       default:
         return <div>Unknown step</div>;
