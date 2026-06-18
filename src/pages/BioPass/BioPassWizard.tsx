@@ -19,7 +19,7 @@ const steps = [
   'Commodity Identification',
   'Supply Chain Mapping',
   'Geolocation Collection',
-  'Supporting Evidence',
+  'Supporting Files',
   'Risk Assessment',
   'Risk Mitigation',
   'Declaration'
@@ -121,7 +121,7 @@ const BioPassWizard: React.FC = () => {
       case 3:
         return <EvidenceStep data={recordData.evidence} updateData={(data) => handleUpdateData('evidence', data)} recordId={recordData.id as string} />;
       case 4:
-        return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} recordId={recordData.id as string} />;
+        return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} />;
       case 5:
         return <MitigationStep data={recordData.mitigation} updateData={(data) => handleUpdateData('mitigation', data)} />;
       case 6:

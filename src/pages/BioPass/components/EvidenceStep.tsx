@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, List, ListItem, ListItemText, ListItemIcon, IconButton, CircularProgress, MenuItem, TextField } from '@mui/material';
+import { Box, Typography, Button, List, ListItem, ListItemText, ListItemIcon, IconButton, CircularProgress, TextField } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -13,24 +13,19 @@ interface EvidenceStepProps {
   recordId: string;
 }
 
-const documentTypes = [
-  'National ID',
-  'Land Ownership Certificate',
-  'Land Use Certificate',
-  'Lease Agreement',
-  'Farm Photos',
-  'Harvest Records',
-  'Certifications',
-  'Other Supporting Documents'
-];
-
 const EvidenceStep: React.FC<EvidenceStepProps> = ({ data = [], updateData, recordId }) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedType, setSelectedType] = useState('National ID');
+  const [customName, setCustomName] = useState('');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+    
+    if (!customName.trim()) {
+      alert("Please provide a name for the file first.");
+      event.target.value = '';
+      return;
+    }
 
     setIsUploading(true);
     try {
@@ -40,14 +35,15 @@ const EvidenceStep: React.FC<EvidenceStepProps> = ({ data = [], updateData, reco
       
       const newDoc: EvidenceDocument = {
         id: uuidv4(),
-        name: file.name,
+        name: customName.trim(), // custom name given by user
         fileUrl: url,
-        fileType: selectedType,
+        fileType: file.name, // storing original file name as type
         uploadTimestamp: new Date().toISOString(),
         uploadedBy: 'Current User' // Mocked user
       };
 
       updateData([...data, newDoc]);
+      setCustomName(''); // reset input after upload
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Failed to upload file.');
@@ -65,42 +61,37 @@ const EvidenceStep: React.FC<EvidenceStepProps> = ({ data = [], updateData, reco
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2 }}>Supporting Evidence</Typography>
+      <Typography variant="h6" sx={{ mb: 2 }}>Supporting Files</Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 4, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 4, alignItems: 'center', flexWrap: 'wrap' }}>
         <TextField
-          select
           size="small"
-          label="Document Type"
-          value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
-          sx={{ minWidth: 200 }}
-        >
-          {documentTypes.map((type) => (
-            <MenuItem key={type} value={type}>
-              {type}
-            </MenuItem>
-          ))}
-        </TextField>
+          label="File Name"
+          placeholder="e.g., Harvest Report 2024"
+          value={customName}
+          onChange={(e) => setCustomName(e.target.value)}
+          sx={{ minWidth: 250 }}
+        />
         <Button
           variant="contained"
           component="label"
           startIcon={isUploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
-          disabled={isUploading}
+          disabled={isUploading || !customName.trim()}
         >
-          {isUploading ? 'Uploading...' : 'Upload File'}
+          {isUploading ? 'Uploading...' : 'Upload Image / Video / PDF'}
           <input
             type="file"
             hidden
+            accept="image/*,video/*,.pdf"
             onChange={handleFileUpload}
           />
         </Button>
       </Box>
 
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Uploaded Documents</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Uploaded Files</Typography>
       {data.length === 0 ? (
         <Typography variant="body2" color="textSecondary" sx={{ py: 2 }}>
-          No documents uploaded yet.
+          No files uploaded yet.
         </Typography>
       ) : (
         <List>
@@ -119,7 +110,7 @@ const EvidenceStep: React.FC<EvidenceStepProps> = ({ data = [], updateData, reco
               </ListItemIcon>
               <ListItemText
                 primary={doc.name}
-                secondary={`${doc.fileType} • Uploaded ${new Date(doc.uploadTimestamp).toLocaleDateString()}`}
+                secondary={`Original file: ${doc.fileType} • Uploaded ${new Date(doc.uploadTimestamp).toLocaleDateString()}`}
               />
             </ListItem>
           ))}
