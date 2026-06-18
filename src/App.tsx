@@ -7,22 +7,35 @@ import QuantitativeAgent from './pages/QuantitativeAgent';
 import AgriSalvager from './pages/AgriSalvager';
 import Future from './pages/Future';
 import { AppThemeProvider } from './theme/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import Login from './pages/Auth/Login';
+import Signup from './pages/Auth/Signup';
 
 function App() {
   return (
     <AppThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout />}>
-            <Route index element={<Home />} />
-            <Route path="biopass" element={<BioPass />} />
-            <Route path="biopass/new" element={<BioPassWizard />} />
-            <Route path="quant" element={<QuantitativeAgent />} />
-            <Route path="salvager" element={<AgriSalvager />} />
-            <Route path="future" element={<Future />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            <Route path="/" element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Home />} />
+              <Route path="biopass" element={<BioPass />} />
+              <Route path="biopass/new" element={<BioPassWizard />} />
+              <Route path="quant" element={<QuantitativeAgent />} />
+              <Route path="salvager" element={<AgriSalvager />} />
+              <Route path="future" element={<Future />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </AppThemeProvider>
   );
 }

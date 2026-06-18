@@ -1,0 +1,72 @@
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+  padding: 20px;
+}
+
+.auth-paper {
+  width: 100%;
+  max-width: 480px;
+  padding: 40px;
+  border-radius: 16px;
+  background-color: rgba(30, 30, 30, 0.8) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.auth-title {
+  text-align: center;
+  font-weight: 700 !important;
+  margin-bottom: 24px !important;
+  background: linear-gradient(90deg, #90caf9, #ce93d8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-link {
+  color: #90caf9;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+  color: #ce93d8;
+  text-decoration: underline;
+}
+
+/* MUI overrides for dark mode feel inside the paper */
+.auth-paper .MuiOutlinedInput-root {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.auth-paper .MuiInputLabel-root {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.auth-paper .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.auth-paper .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.auth-paper .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #90caf9;
+}
+
+.auth-paper .MuiInputBase-input {
+  color: #fff;
+}
