@@ -1,10 +1,10 @@
 import { db, storage } from '../config/firebase';
-import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { BioPassRecord } from '../types/biopass';
+import type { BioPassRecord } from '../types/biopass';
 
 export const biopassService = {
-  createRecord: async (userId: string): Promise<string> => {
+  createRecord: async (_userId: string): Promise<string> => {
     const newRecordRef = doc(collection(db, 'biopass'));
     const initialData: BioPassRecord = {
       id: newRecordRef.id,

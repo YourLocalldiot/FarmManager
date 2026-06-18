@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Stepper, Step, StepLabel, Button, Card, CardContent, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { BioPassRecord } from '../../types/biopass';
+import type { BioPassRecord } from '../../types/biopass';
 import { biopassService } from '../../services/biopassService';
 import { generateComplianceDataJSON, generateFarmBoundaryGeoJSON, generateComplianceReportPDF } from '../../utils/exportUtils';
 

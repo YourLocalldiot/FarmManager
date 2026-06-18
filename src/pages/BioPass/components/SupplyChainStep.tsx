@@ -3,7 +3,7 @@ import { Box, Typography, TextField, MenuItem, Grid, Button, Card, CardContent, 
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { v4 as uuidv4 } from 'uuid';
-import { SupplyChainActor } from '../../../types/biopass';
+import type { SupplyChainActor } from '../../../types/biopass';
 
 interface SupplyChainStepProps {
   data?: SupplyChainActor[];
@@ -58,7 +58,7 @@ const SupplyChainStep: React.FC<SupplyChainStepProps> = ({ data = [], updateData
             <Card key={actor.id} variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                     Actor {index + 1}
                   </Typography>
                   <IconButton color="error" onClick={() => handleRemoveActor(actor.id)} size="small">
@@ -66,7 +66,7 @@ const SupplyChainStep: React.FC<SupplyChainStepProps> = ({ data = [], updateData
                   </IconButton>
                 </Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       select
                       fullWidth
@@ -82,7 +82,7 @@ const SupplyChainStep: React.FC<SupplyChainStepProps> = ({ data = [], updateData
                       ))}
                     </TextField>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Company/Farm Name"
@@ -91,7 +91,7 @@ const SupplyChainStep: React.FC<SupplyChainStepProps> = ({ data = [], updateData
                       required
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Contact Name"
@@ -99,7 +99,7 @@ const SupplyChainStep: React.FC<SupplyChainStepProps> = ({ data = [], updateData
                       onChange={(e) => handleChange(actor.id, 'contactName', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Phone Number"
@@ -107,7 +107,7 @@ const SupplyChainStep: React.FC<SupplyChainStepProps> = ({ data = [], updateData
                       onChange={(e) => handleChange(actor.id, 'phoneNumber', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Address"

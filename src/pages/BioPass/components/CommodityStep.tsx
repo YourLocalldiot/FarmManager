@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, TextField, MenuItem, Grid } from '@mui/material';
-import { CommodityData } from '../../../types/biopass';
+import type { CommodityData } from '../../../types/biopass';
 
 interface CommodityStepProps {
   data?: CommodityData;
@@ -22,7 +22,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
     <Box>
       <Typography variant="h6" sx={{ mb: 3 }}>Commodity Information</Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             select
             fullWidth
@@ -38,7 +38,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             label="HS Code"
@@ -48,7 +48,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             required
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
             label="Product Description"
@@ -59,7 +59,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             required
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             label="Quantity"
@@ -69,7 +69,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             required
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             label="Unit"
@@ -79,7 +79,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             required
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             label="Production Country"
@@ -88,7 +88,7 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             required
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
             label="Production Year"

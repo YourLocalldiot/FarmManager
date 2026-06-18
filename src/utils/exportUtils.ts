@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { BioPassRecord } from '../types/biopass';
+import type { BioPassRecord } from '../types/biopass';
 
 export const downloadFile = (data: string, filename: string, type: string) => {
   const blob = new Blob([data], { type });

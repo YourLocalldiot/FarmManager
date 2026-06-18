@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Button, Card, CardContent, Grid, TextField, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { MapContainer, TileLayer, Marker, Polygon, useMapEvents } from 'react-leaflet';
@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import * as turf from '@turf/turf';
 import { v4 as uuidv4 } from 'uuid';
-import { PlotData } from '../../../types/biopass';
+import type { PlotData } from '../../../types/biopass';
 
 // Fix Leaflet's default icon path issues with Webpack/Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -23,7 +23,7 @@ interface GeolocationStepProps {
 
 const MapClickHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void }> = ({ onMapClick }) => {
   useMapEvents({
-    click(e) {
+    click(e: any) {
       onMapClick(e.latlng);
     },
   });
@@ -98,7 +98,7 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
       <Typography variant="h6" sx={{ mb: 2 }}>Farm Geolocation & Boundary</Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ height: 400, width: '100%', mb: 2, border: '1px solid #ccc', borderRadius: 1, overflow: 'hidden' }}>
             <MapContainer center={defaultCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer
@@ -135,7 +135,7 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                   size="small"
                   label="Plot Name"
                   value={plotName}
-                  onChange={(e) => setPlotName(e.target.value)}
+                  onChange={(e: any) => setPlotName(e.target.value)}
                 />
                 <Button variant="contained" color="success" onClick={handleCompletePolygon}>
                   Complete Polygon
@@ -151,8 +151,8 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>Saved Plots</Typography>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold',  mb: 2  }}>Saved Plots</Typography>
           {data.length === 0 ? (
             <Typography variant="body2" color="textSecondary">No plots added yet.</Typography>
           ) : (
@@ -162,7 +162,7 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">{plot.name}</Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{plot.name}</Typography>
                         <Typography variant="body2" color="textSecondary">Area: {plot.area} ha</Typography>
                         <Typography variant="caption" color="textSecondary">
                           Lat: {plot.latitude.toFixed(4)}, Lng: {plot.longitude.toFixed(4)}

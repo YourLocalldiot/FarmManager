@@ -4,7 +4,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { v4 as uuidv4 } from 'uuid';
-import { EvidenceDocument } from '../../../types/biopass';
+import type { EvidenceDocument } from '../../../types/biopass';
 import { biopassService } from '../../../services/biopassService';
 
 interface EvidenceStepProps {
@@ -97,7 +97,7 @@ const EvidenceStep: React.FC<EvidenceStepProps> = ({ data = [], updateData, reco
         </Button>
       </Box>
 
-      <Typography variant="subtitle1" fontWeight="bold">Uploaded Documents</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Uploaded Documents</Typography>
       {data.length === 0 ? (
         <Typography variant="body2" color="textSecondary" sx={{ py: 2 }}>
           No documents uploaded yet.

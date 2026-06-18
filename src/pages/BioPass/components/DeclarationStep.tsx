@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Box, Typography, Button, Checkbox, FormControlLabel, CircularProgress } from '@mui/material';
 import SignatureCanvas from 'react-signature-canvas';
-import { DeclarationData } from '../../../types/biopass';
+import type { DeclarationData } from '../../../types/biopass';
 import { biopassService } from '../../../services/biopassService';
 
 interface DeclarationStepProps {
@@ -73,7 +73,7 @@ const DeclarationStep: React.FC<DeclarationStepProps> = ({ data, updateData, rec
 
       {confirmed && (
         <Box sx={{ mb: 4 }}>
-          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold',  mb: 1  }}>
             Digital Signature
           </Typography>
           

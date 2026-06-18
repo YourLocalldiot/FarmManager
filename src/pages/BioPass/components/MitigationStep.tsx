@@ -3,7 +3,7 @@ import { Box, Typography, TextField, MenuItem, Grid, Button, Card, CardContent, 
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { v4 as uuidv4 } from 'uuid';
-import { MitigationAction } from '../../../types/biopass';
+import type { MitigationAction } from '../../../types/biopass';
 
 interface MitigationStepProps {
   data?: MitigationAction[];
@@ -58,7 +58,7 @@ const MitigationStep: React.FC<MitigationStepProps> = ({ data = [], updateData }
             <Card key={action.id} variant="outlined">
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold">
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                     Action {index + 1}
                   </Typography>
                   <IconButton color="error" onClick={() => handleRemoveAction(action.id)} size="small">
@@ -66,7 +66,7 @@ const MitigationStep: React.FC<MitigationStepProps> = ({ data = [], updateData }
                   </IconButton>
                 </Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Identified Risk Description"
@@ -75,7 +75,7 @@ const MitigationStep: React.FC<MitigationStepProps> = ({ data = [], updateData }
                       required
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Mitigation Action"
@@ -86,7 +86,7 @@ const MitigationStep: React.FC<MitigationStepProps> = ({ data = [], updateData }
                       required
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth
                       label="Responsible Person"
@@ -94,17 +94,17 @@ const MitigationStep: React.FC<MitigationStepProps> = ({ data = [], updateData }
                       onChange={(e) => handleChange(action.id, 'responsiblePerson', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth
                       label="Due Date"
                       type="date"
-                      InputLabelProps={{ shrink: true }}
+                      slotProps={{ inputLabel: { shrink: true } }}
                       value={action.dueDate}
                       onChange={(e) => handleChange(action.id, 'dueDate', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       select
                       fullWidth

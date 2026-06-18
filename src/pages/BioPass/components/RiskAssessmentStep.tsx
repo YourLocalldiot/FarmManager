@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, FormControl, RadioGroup, FormControlLabel, Radio, Button, CircularProgress, Link } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { RiskAssessmentAnswer } from '../../../types/biopass';
+import type { RiskAssessmentAnswer } from '../../../types/biopass';
 import { biopassService } from '../../../services/biopassService';
 
 interface RiskAssessmentStepProps {
@@ -74,7 +74,7 @@ const RiskAssessmentStep: React.FC<RiskAssessmentStepProps> = ({ data = [], upda
 
           return (
             <Box key={q.id} sx={{ p: 2, border: '1px solid #eee', borderRadius: 2 }}>
-              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold',  mb: 2  }}>
                 {q.text}
               </Typography>
               
