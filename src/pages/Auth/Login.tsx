@@ -4,8 +4,14 @@ import {
   signInWithEmailAndPassword,
   signInWithPhoneNumber,
   RecaptchaVerifier,
-  ConfirmationResult
+  type ConfirmationResult
 } from 'firebase/auth';
+
+declare global {
+  interface Window {
+    recaptchaVerifier: RecaptchaVerifier;
+  }
+}
 import { auth } from '../../config/firebase';
 import {
   Box,

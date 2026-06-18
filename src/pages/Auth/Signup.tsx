@@ -110,7 +110,6 @@ export default function Signup() {
             onChange={(e) => setPassword(e.target.value)}
             required
             variant="outlined"
-            inputProps={{ minLength: 6 }}
           />
 
           <Button
