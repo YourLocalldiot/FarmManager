@@ -35,26 +35,25 @@ export default function Signup() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      try {
-        // Save additional profile info to Firestore
-        await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          email: user.email,
-          firstName,
-          lastName,
-          middleName: middleName || null,
-          createdAt: new Date().toISOString()
-        });
-      } catch (firestoreErr) {
-        console.error("Firestore error:", firestoreErr);
-        // We continue even if Firestore fails, as the auth user is already created
-        // But we might want to alert them to set up Firestore.
-      }
+      // Fire-and-forget: save profile to Firestore in background
+      // Don't await — Firestore SDK hangs indefinitely if DB isn't configured
+      setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        firstName,
+        lastName,
+        middleName: middleName || null,
+        createdAt: new Date().toISOString()
+      }).catch((firestoreErr) => {
+        console.error("Firestore profile save error:", firestoreErr);
+      });
 
+      // Navigate immediately — auth is already successful
+      setLoading(false);
       navigate('/');
+      return;
     } catch (err: any) {
       setError(err.message || 'Failed to sign up.');
-    } finally {
       setLoading(false);
     }
   };
