@@ -187,9 +187,11 @@ export default function Login() {
                 </Button>
               </form>
             )}
-            <div id="recaptcha-container"></div>
+            )}
           </div>
         )}
+
+        <div id="recaptcha-container"></div>
 
         <Divider sx={{ my: 2 }}>OR</Divider>
 
