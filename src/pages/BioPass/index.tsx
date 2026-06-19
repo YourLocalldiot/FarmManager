@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Card, CardContent, Button,
   Chip, Divider, CircularProgress, List, ListItem,
-  ListItemText, ListItemSecondaryAction, IconButton,
+  ListItemText, ListItemSecondaryAction,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DescriptionIcon from '@mui/icons-material/Description';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
