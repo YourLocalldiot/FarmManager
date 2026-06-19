@@ -1,7 +1,6 @@
 export interface CommodityData {
   type: string;
   description: string;
-  hsCode: string;
   quantity: number;
   unit: string;
   productionCountry: string;

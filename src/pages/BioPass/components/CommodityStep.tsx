@@ -93,16 +93,6 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
             ))}
           </TextField>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField
-            fullWidth
-            label="HS Code"
-            value={data.hsCode || ''}
-            onChange={handleChange('hsCode')}
-            placeholder="e.g., 0901"
-            required
-          />
-        </Grid>
         <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth

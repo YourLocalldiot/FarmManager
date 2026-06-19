@@ -1,5 +1,5 @@
 import { db, storage } from '../config/firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
 import type { BioPassRecord } from '../types/biopass';
 
@@ -55,11 +55,14 @@ export const biopassService = {
   getUserRecords: async (userId: string): Promise<BioPassRecord[]> => {
     const q = query(
       collection(db, 'biopass'),
-      where('userId', '==', userId),
-      orderBy('updatedAt', 'desc')
+      where('userId', '==', userId)
     );
     const snap = await withTimeout(getDocs(q), 8000, 'getUserRecords');
-    return snap.docs.map((d) => d.data() as BioPassRecord);
+    const records = snap.docs.map((d) => d.data() as BioPassRecord);
+    // Sort client-side to avoid requiring a Firestore composite index
+    return records.sort((a, b) =>
+      (b.updatedAt ?? b.createdAt ?? '').localeCompare(a.updatedAt ?? a.createdAt ?? '')
+    );
   },
 
   uploadEvidenceFile: async (file: File, recordId: string): Promise<string> => {
