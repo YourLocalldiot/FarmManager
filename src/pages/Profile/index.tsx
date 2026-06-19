@@ -31,10 +31,9 @@ import {
   updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider,
-  updatePhoneNumber,
 } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../../config/firebase';
+import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserAvatar } from '../../components/layout/Header';
 import { useLocation } from 'react-router-dom';
@@ -86,23 +85,25 @@ const PasswordDialog: React.FC<PasswordDialogProps> = ({ open, onConfirm, onCanc
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <TextField
-          label="Current Password"
-          type={show ? 'text' : 'password'}
-          fullWidth
-          autoFocus
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && pw) onConfirm(pw); }}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShow((s) => !s)} edge="end">
-                  {show ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+            label="Current Password"
+            type={show ? 'text' : 'password'}
+            fullWidth
+            autoFocus
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && pw) onConfirm(pw); }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShow((s) => !s)} edge="end">
+                      {show ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel} disabled={loading}>Cancel</Button>
@@ -182,8 +183,8 @@ const FieldRow: React.FC<FieldRowProps> = ({ field, currentValue, onSave, highli
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }}
             sx={{ mt: 0.5 }}
-            InputProps={
-              field.type === 'password'
+            slotProps={{
+              input: field.type === 'password'
                 ? {
                     endAdornment: (
                       <InputAdornment position="end">
@@ -193,8 +194,8 @@ const FieldRow: React.FC<FieldRowProps> = ({ field, currentValue, onSave, highli
                       </InputAdornment>
                     ),
                   }
-                : undefined
-            }
+                : undefined,
+            }}
           />
         ) : (
           <Typography variant="body1" sx={{ fontWeight: 500, mt: 0.25 }}>

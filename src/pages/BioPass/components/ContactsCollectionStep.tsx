@@ -10,7 +10,7 @@ import {
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -82,7 +82,7 @@ const ContactField: React.FC<ContactFieldProps> = ({ icon, label, value, focusPa
             variant="outlined"
             size="small"
             color="primary"
-            startIcon={<AddCircleOutlineIcon />}
+            startIcon={<AddIcon />}
             onClick={() => navigate(`/profile?focus=${focusParam}`)}
             sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
           >

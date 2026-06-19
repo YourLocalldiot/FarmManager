@@ -77,7 +77,7 @@ const Header: React.FC = () => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleClose}
-          PaperProps={{ sx: { mt: 1, minWidth: 160 } }}
+          slotProps={{ paper: { sx: { mt: 1, minWidth: 160 } } }}
         >
           <MenuItem onClick={handleProfile} sx={{ gap: 1.5 }}>
             <PersonIcon fontSize="small" color="action" />

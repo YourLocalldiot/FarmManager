@@ -10,7 +10,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import CommodityStep from './components/CommodityStep';
 import SupplyChainStep from './components/SupplyChainStep';
 import GeolocationStep from './components/GeolocationStep';
-import EvidenceStep from './components/EvidenceStep';
 import ContactsCollectionStep from './components/ContactsCollectionStep';
 import RiskAssessmentStep from './components/RiskAssessmentStep';
 
