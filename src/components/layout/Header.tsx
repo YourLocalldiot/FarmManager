@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Box, Menu, MenuItem, Avatar } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import { AppBar, Toolbar, Typography, IconButton, Box, Menu, MenuItem, Avatar, Tooltip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import LanguageIcon from '@mui/icons-material/Language';
 import { useAuth } from '../../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import { useNavigate } from 'react-router-dom';
+import { useColorMode } from '../../theme/ThemeContext';
 
 /** Renders a green circle avatar with the user's first-name initial. */
 export const UserAvatar: React.FC<{ firstName?: string; size?: number }> = ({
@@ -32,8 +35,10 @@ export const UserAvatar: React.FC<{ firstName?: string; size?: number }> = ({
 
 const Header: React.FC = () => {
   const { userProfile } = useAuth();
+  const { mode, toggleColorMode } = useColorMode();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [langAnchorEl, setLangAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -53,6 +58,14 @@ const Header: React.FC = () => {
     navigate('/profile');
   };
 
+  const handleLangMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setLangAnchorEl(event.currentTarget);
+  };
+
+  const handleLangClose = () => {
+    setLangAnchorEl(null);
+  };
+
   return (
     <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Toolbar>
@@ -61,10 +74,38 @@ const Header: React.FC = () => {
             FarmManager
           </Typography>
         </Box>
-        <IconButton color="inherit">
-          <NotificationsIcon />
-        </IconButton>
 
+        {/* Dark / Light mode toggle */}
+        <Tooltip title={mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+          <IconButton onClick={toggleColorMode} color="inherit">
+            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+          </IconButton>
+        </Tooltip>
+
+        {/* Language selector (stub for future i18n) */}
+        <Tooltip title="Language (coming soon)">
+          <IconButton onClick={handleLangMenu} color="inherit">
+            <LanguageIcon />
+          </IconButton>
+        </Tooltip>
+        <Menu
+          anchorEl={langAnchorEl}
+          open={Boolean(langAnchorEl)}
+          onClose={handleLangClose}
+          slotProps={{ paper: { sx: { mt: 1, minWidth: 160 } } }}
+        >
+          <MenuItem onClick={handleLangClose} selected>
+            🇬🇧 English
+          </MenuItem>
+          <MenuItem onClick={handleLangClose} disabled>
+            🇻🇳 Tiếng Việt (soon)
+          </MenuItem>
+          <MenuItem onClick={handleLangClose} disabled>
+            🇨🇳 中文 (soon)
+          </MenuItem>
+        </Menu>
+
+        {/* User avatar / profile menu */}
         <Box sx={{ ml: 1, display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={handleMenu}>
           <Typography variant="body2" sx={{ mr: 1, display: { xs: 'none', sm: 'block' } }}>
             {userProfile?.firstName || 'Farmer'}

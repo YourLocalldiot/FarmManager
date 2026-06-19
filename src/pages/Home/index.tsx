@@ -1,13 +1,10 @@
 import React from 'react';
-import { Box, Typography, Card, CardContent, Grid, Avatar, List, ListItem, ListItemAvatar, ListItemText, Divider, IconButton, CardActionArea } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid, Avatar, List, ListItem, ListItemAvatar, ListItemText, Divider, CardActionArea } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { mockActivities } from '../../mock/data';
-import { useColorMode } from '../../theme/ThemeContext';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
 
 const SummaryCard = ({ title, value, subtitle, icon: Icon, color }: any) => (
   <Card>
@@ -33,8 +30,6 @@ const SummaryCard = ({ title, value, subtitle, icon: Icon, color }: any) => (
 );
 
 const Home: React.FC = () => {
-  const { mode, toggleColorMode } = useColorMode();
-
   return (
     <Box sx={{ p: 2, pb: 10 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -46,9 +41,6 @@ const Home: React.FC = () => {
             Here's what's happening today.
           </Typography>
         </Box>
-        <IconButton onClick={toggleColorMode} color="inherit">
-          {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-        </IconButton>
       </Box>
 
       {/* Summary Cards */}

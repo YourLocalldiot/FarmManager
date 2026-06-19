@@ -8,7 +8,6 @@ import { generateComplianceDataJSON, generateFarmBoundaryGeoJSON, generateCompli
 import { useAuth } from '../../contexts/AuthContext';
 
 import CommodityStep from './components/CommodityStep';
-import SupplyChainStep from './components/SupplyChainStep';
 import GeolocationStep from './components/GeolocationStep';
 import ContactsCollectionStep from './components/ContactsCollectionStep';
 import RiskAssessmentStep from './components/RiskAssessmentStep';
@@ -17,7 +16,6 @@ import DeclarationStep from './components/DeclarationStep';
 
 const steps = [
   'Commodity Identification',
-  'Supply Chain Mapping',
   'Geolocation Collection',
   'Contacts Collection',
   'Risk Assessment',
@@ -37,7 +35,6 @@ const BioPassWizard: React.FC = () => {
     commodity: {
       type: '',
       description: '',
-      hsCode: '',
       quantity: 0,
       unit: 'Tonnes',
       productionCountry: '',
@@ -115,14 +112,12 @@ const BioPassWizard: React.FC = () => {
       case 0:
         return <CommodityStep data={recordData.commodity} updateData={(data) => handleUpdateData('commodity', data)} />;
       case 1:
-        return <SupplyChainStep data={recordData.supplyChain} updateData={(data) => handleUpdateData('supplyChain', data)} />;
-      case 2:
         return <GeolocationStep data={recordData.plots} updateData={(data) => handleUpdateData('plots', data)} />;
-      case 3:
+      case 2:
         return <ContactsCollectionStep />;
-      case 4:
+      case 3:
         return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} />;
-      case 5:
+      case 4:
         return <DeclarationStep data={recordData.declaration} updateData={(data) => handleUpdateData('declaration', data)} recordId={recordId} />;
       default:
         return <div>Unknown step</div>;

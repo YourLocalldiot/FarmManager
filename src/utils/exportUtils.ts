@@ -57,7 +57,6 @@ export const generateComplianceReportPDF = (record: Partial<BioPassRecord>) => {
       body: [
         ['Type', record.commodity.type],
         ['Description', record.commodity.description],
-        ['HS Code', record.commodity.hsCode],
         ['Quantity', `${record.commodity.quantity} ${record.commodity.unit}`],
         ['Country', record.commodity.productionCountry],
         ['Year', record.commodity.productionYear],
