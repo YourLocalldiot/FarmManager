@@ -6,6 +6,7 @@ import BioPassWizard from './pages/BioPass/BioPassWizard';
 import QuantitativeAgent from './pages/QuantitativeAgent';
 import AgriSalvager from './pages/AgriSalvager';
 import Future from './pages/Future';
+import ProfilePage from './pages/Profile';
 import { AppThemeProvider } from './theme/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -32,6 +33,7 @@ function App() {
               <Route path="quant" element={<QuantitativeAgent />} />
               <Route path="salvager" element={<AgriSalvager />} />
               <Route path="future" element={<Future />} />
+              <Route path="profile" element={<ProfilePage />} />
             </Route>
           </Routes>
         </BrowserRouter>

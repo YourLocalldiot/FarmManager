@@ -11,6 +11,7 @@ import CommodityStep from './components/CommodityStep';
 import SupplyChainStep from './components/SupplyChainStep';
 import GeolocationStep from './components/GeolocationStep';
 import EvidenceStep from './components/EvidenceStep';
+import ContactsCollectionStep from './components/ContactsCollectionStep';
 import RiskAssessmentStep from './components/RiskAssessmentStep';
 
 import DeclarationStep from './components/DeclarationStep';
@@ -19,7 +20,7 @@ const steps = [
   'Commodity Identification',
   'Supply Chain Mapping',
   'Geolocation Collection',
-  'Supporting Files',
+  'Contacts Collection',
   'Risk Assessment',
   'Declaration'
 ];
@@ -117,7 +118,7 @@ const BioPassWizard: React.FC = () => {
       case 2:
         return <GeolocationStep data={recordData.plots} updateData={(data) => handleUpdateData('plots', data)} />;
       case 3:
-        return <EvidenceStep data={recordData.evidence} updateData={(data) => handleUpdateData('evidence', data)} recordId={recordId} />;
+        return <ContactsCollectionStep />;
       case 4:
         return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} />;
       case 5:
