@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, TextField, MenuItem, Grid } from '@mui/material';
+import { Box, Typography, TextField, MenuItem, Grid, Divider } from '@mui/material';
 import type { CommodityData } from '../../../types/biopass';
 
 interface CommodityStepProps {
@@ -36,6 +36,47 @@ const CommodityStep: React.FC<CommodityStepProps> = ({ data, updateData }) => {
     <Box>
       <Typography variant="h6" sx={{ mb: 3 }}>Commodity Information</Typography>
       <Grid container spacing={3}>
+
+        {/* ── Producer / Farm Identity ── */}
+        <Grid size={{ xs: 12 }}>
+          <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 1, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: '0.7rem' }}>
+            Producer Identity
+          </Typography>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <TextField
+            fullWidth
+            label="Company / Farm Name"
+            value={data.companyName || ''}
+            onChange={handleChange('companyName')}
+            placeholder="e.g., Green Valley Farm Co."
+            required
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          {/* spacer on desktop, full-width on mobile */}
+        </Grid>
+        <Grid size={{ xs: 12 }}>
+          <TextField
+            fullWidth
+            label="Address"
+            value={data.address || ''}
+            onChange={handleChange('address')}
+            placeholder="e.g., 123 Farm Road, Mekong Delta, Vietnam"
+            multiline
+            rows={2}
+            required
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Divider sx={{ my: 0.5 }} />
+          <Typography variant="subtitle2" color="textSecondary" sx={{ mt: 1.5, mb: 1, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: '0.7rem' }}>
+            Commodity Details
+          </Typography>
+        </Grid>
+
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             select

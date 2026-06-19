@@ -1,146 +1,221 @@
-import React from 'react';
-import { Box, Typography, Card, CardContent, Grid, Button, LinearProgress, Divider, List, ListItem, ListItemText, Chip } from '@mui/material';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import MapIcon from '@mui/icons-material/Map';
-import QrCodeIcon from '@mui/icons-material/QrCode2';
-import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import React, { useEffect, useState } from 'react';
+import {
+  Box, Typography, Card, CardContent, Button,
+  Chip, Divider, CircularProgress, List, ListItem,
+  ListItemText, ListItemSecondaryAction, IconButton,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useNavigate } from 'react-router-dom';
+import DescriptionIcon from '@mui/icons-material/Description';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { biopassService } from '../../services/biopassService';
+import type { BioPassRecord } from '../../types/biopass';
+
+// ─── Status helpers ───────────────────────────────────────────────────────────
+
+const statusColor = (status: string): 'default' | 'warning' | 'success' | 'info' => {
+  if (status === 'Draft') return 'warning';
+  if (status === 'Submitted') return 'info';
+  if (status === 'Approved') return 'success';
+  return 'default';
+};
+
+const statusIcon = (status: string) => {
+  if (status === 'Draft') return <EditNoteIcon fontSize="small" />;
+  if (status === 'Approved') return <CheckCircleOutlineIcon fontSize="small" />;
+  return <HourglassEmptyIcon fontSize="small" />;
+};
+
+// ─── Record list item ─────────────────────────────────────────────────────────
+
+const RecordItem: React.FC<{ record: BioPassRecord }> = ({ record }) => {
+  const navigate = useNavigate();
+  const commodityLabel = record.commodity?.type
+    ? `${record.commodity.type} — ${record.commodity.companyName || 'Unnamed'}`
+    : 'Untitled Declaration';
+
+  const date = record.updatedAt
+    ? new Date(record.updatedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    : '—';
+
+  return (
+    <ListItem
+      sx={{
+        borderRadius: 2,
+        mb: 1,
+        border: '1px solid',
+        borderColor: 'divider',
+        '&:hover': { bgcolor: 'action.hover' },
+        cursor: 'pointer',
+        pr: 7,
+      }}
+      onClick={() => navigate(`/biopass/${record.id}`)}
+    >
+      <Box sx={{ mr: 1.5, color: record.status === 'Draft' ? 'warning.main' : 'success.main', display: 'flex' }}>
+        {statusIcon(record.status)}
+      </Box>
+      <ListItemText
+        primary={
+          <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+            {commodityLabel}
+          </Typography>
+        }
+        secondary={
+          <Typography variant="caption" color="textSecondary">
+            {date}
+          </Typography>
+        }
+      />
+      <ListItemSecondaryAction>
+        <Chip
+          label={record.status}
+          size="small"
+          color={statusColor(record.status)}
+          sx={{ fontWeight: 600, fontSize: '0.68rem' }}
+        />
+      </ListItemSecondaryAction>
+    </ListItem>
+  );
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 const BioPass: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
+
+  const [records, setRecords] = useState<BioPassRecord[]>([]);
+  const [loadingRecords, setLoadingRecords] = useState(true);
+
+  // Success message from wizard submission
+  const successMessage = (location.state as any)?.message;
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setLoadingRecords(true);
+    biopassService
+      .getUserRecords(currentUser.uid)
+      .then(setRecords)
+      .catch((err) => console.error('Failed to load records:', err))
+      .finally(() => setLoadingRecords(false));
+  }, [currentUser]);
+
+  const drafts = records.filter((r) => r.status === 'Draft');
+  const submitted = records.filter((r) => r.status !== 'Draft');
 
   return (
-    <Box sx={{ p: 2, pb: 10 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          BioPass
+    <Box sx={{ p: 2, pb: 12 }}>
+
+      {/* ── Page title ── */}
+      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
+        BioPass
+      </Typography>
+      <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>
+        EU Deforestation Regulation compliance declarations
+      </Typography>
+
+      {successMessage && (
+        <Card sx={{ mb: 3, bgcolor: 'success.light', border: '1px solid', borderColor: 'success.main' }}>
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <Typography variant="body2" color="success.dark" sx={{ fontWeight: 500 }}>
+              ✅ {successMessage}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Big CTA button ── */}
+      <Button
+        variant="contained"
+        color="primary"
+        fullWidth
+        size="large"
+        startIcon={<AddIcon />}
+        onClick={() => navigate('/biopass/new')}
+        sx={{
+          py: 2.2,
+          borderRadius: 3,
+          fontSize: '1.05rem',
+          fontWeight: 700,
+          letterSpacing: 0.5,
+          mb: 4,
+          boxShadow: '0 4px 20px rgba(46,125,50,0.35)',
+          background: 'linear-gradient(135deg, #2e7d32 0%, #43a047 100%)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)',
+            boxShadow: '0 6px 24px rgba(46,125,50,0.45)',
+          },
+        }}
+      >
+        New Declaration
+      </Button>
+
+      {/* ── Records panel ── */}
+      <Card sx={{ borderRadius: 3 }}>
+        <CardContent sx={{ pb: '12px !important' }}>
+
+          {loadingRecords ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={32} />
+            </Box>
+          ) : records.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <DescriptionIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+              <Typography variant="body2" color="textSecondary">
+                No declarations yet. Tap "New Declaration" to get started.
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {/* Drafts section */}
+              {drafts.length > 0 && (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <EditNoteIcon fontSize="small" color="warning" />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'warning.dark' }}>
+                      Drafts
+                    </Typography>
+                    <Chip label={drafts.length} size="small" color="warning" sx={{ height: 18, fontSize: '0.65rem' }} />
+                  </Box>
+                  <List disablePadding>
+                    {drafts.map((r) => <RecordItem key={r.id} record={r} />)}
+                  </List>
+                </>
+              )}
+
+              {/* Divider between sections */}
+              {drafts.length > 0 && submitted.length > 0 && <Divider sx={{ my: 2 }} />}
+
+              {/* Submitted / exported section */}
+              {submitted.length > 0 && (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <CloudDownloadIcon fontSize="small" color="success" />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.dark' }}>
+                      Submitted &amp; Exported
+                    </Typography>
+                    <Chip label={submitted.length} size="small" color="success" sx={{ height: 18, fontSize: '0.65rem' }} />
+                  </Box>
+                  <List disablePadding>
+                    {submitted.map((r) => <RecordItem key={r.id} record={r} />)}
+                  </List>
+                </>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {!loadingRecords && records.length > 0 && (
+        <Typography variant="caption" color="textSecondary" sx={{ display: 'block', textAlign: 'center', mt: 1.5 }}>
+          {records.length} declaration{records.length !== 1 ? 's' : ''} total
         </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/biopass/new')}
-        >
-          New Declaration
-        </Button>
-      </Box>
-
-      {/* Status Card */}
-      <Card sx={{ mb: 3, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <VerifiedUserIcon sx={{ mr: 1, fontSize: 32 }} />
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Status: Verified</Typography>
-          </Box>
-          <Grid container spacing={2}>
-            <Grid size={6}>
-              <Typography variant="caption" sx={{ opacity: 0.8 }}>Last Verification</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>Oct 15, 2025</Typography>
-            </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" sx={{ opacity: 0.8 }}>Compliance Score</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>98/100</Typography>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {/* Farm Information Card */}
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Farm Details</Typography>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid size={6}>
-              <Typography variant="caption" color="textSecondary">Farm Name</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>Green Valley Rice</Typography>
-            </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" color="textSecondary">Province</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>Mekong Delta</Typography>
-            </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" color="textSecondary">Crop Type</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>Jasmine Rice</Typography>
-            </Grid>
-            <Grid size={6}>
-              <Typography variant="caption" color="textSecondary">Farm Area</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>12.5 Hectares</Typography>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {/* Interactive Map Placeholder */}
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>GPS Boundary</Typography>
-      <Card sx={{ mb: 3, overflow: 'hidden' }}>
-        <Box sx={{ height: 180, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
-          <MapIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5, mb: 1 }} />
-          <Typography variant="body2" color="textSecondary">Interactive Map Placeholder</Typography>
-          
-          {/* Fake polygon outline */}
-          <Box sx={{
-            position: 'absolute',
-            width: '60%',
-            height: '60%',
-            border: '2px solid #2e7d32',
-            backgroundColor: 'rgba(46, 125, 50, 0.2)',
-            transform: 'skew(-10deg) rotate(5deg)',
-            pointerEvents: 'none'
-          }} />
-        </Box>
-        <CardContent sx={{ py: 1.5 }}>
-          <Typography variant="caption" color="textSecondary" sx={{ fontFamily: 'monospace' }}>
-            Coordinates: 10.0451° N, 105.7469° E
-          </Typography>
-        </CardContent>
-      </Card>
-
-      {/* Certification Section */}
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Certification</Typography>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>Verification Progress</Typography>
-            <Typography variant="body2" color="primary">100%</Typography>
-          </Box>
-          <LinearProgress variant="determinate" value={100} sx={{ height: 8, borderRadius: 4, mb: 3 }} />
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ p: 1, bgcolor: 'action.selected', borderRadius: 2 }}>
-              <QrCodeIcon sx={{ fontSize: 64, color: 'text.primary' }} />
-            </Box>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>GlobalGAP Certified</Typography>
-              <Button variant="outlined" startIcon={<CloudDownloadIcon />} size="small">
-                Download PDF
-              </Button>
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Recent Submissions */}
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Recent Submissions</Typography>
-      <Card>
-        <List disablePadding>
-          <ListItem>
-            <ListItemText primary="Soil Analysis Report Q3" secondary="Submitted: Oct 10, 2025" />
-            <Chip label="Approved" size="small" color="success" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText primary="Water Usage Log" secondary="Submitted: Sep 28, 2025" />
-            <Chip label="Approved" size="small" color="success" />
-          </ListItem>
-          <Divider />
-          <ListItem>
-            <ListItemText primary="Pesticide Declaration" secondary="Submitted: Aug 15, 2025" />
-            <Chip label="Under Review" size="small" color="warning" />
-          </ListItem>
-        </List>
-      </Card>
-
+      )}
     </Box>
   );
 };

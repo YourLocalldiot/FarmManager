@@ -41,7 +41,9 @@ const BioPassWizard: React.FC = () => {
       quantity: 0,
       unit: 'Tonnes',
       productionCountry: '',
-      productionYear: new Date().getFullYear().toString()
+      productionYear: new Date().getFullYear().toString(),
+      companyName: '',
+      address: ''
     },
     supplyChain: [],
     plots: [],

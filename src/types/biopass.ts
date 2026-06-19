@@ -6,6 +6,8 @@ export interface CommodityData {
   unit: string;
   productionCountry: string;
   productionYear: string;
+  companyName: string;
+  address: string;
 }
 
 export interface SupplyChainActor {
