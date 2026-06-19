@@ -34,13 +34,18 @@ const statusIcon = (status: string) => {
 
 const RecordItem: React.FC<{ record: BioPassRecord }> = ({ record }) => {
   const navigate = useNavigate();
-  const commodityLabel = record.commodity?.type
-    ? `${record.commodity.type} — ${record.commodity.companyName || 'Unnamed'}`
-    : 'Untitled Declaration';
 
-  const date = record.updatedAt
-    ? new Date(record.updatedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-    : '—';
+  const dateLabel = record.updatedAt
+    ? new Date(record.updatedAt).toLocaleString(undefined, {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : record.createdAt
+    ? new Date(record.createdAt).toLocaleString(undefined, {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : 'Unknown date';
 
   return (
     <ListItem
@@ -61,12 +66,7 @@ const RecordItem: React.FC<{ record: BioPassRecord }> = ({ record }) => {
       <ListItemText
         primary={
           <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-            {commodityLabel}
-          </Typography>
-        }
-        secondary={
-          <Typography variant="caption" color="textSecondary">
-            {date}
+            {dateLabel}
           </Typography>
         }
       />

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Stepper, Step, StepLabel, Button, Card, CardContent, CircularProgress, Snackbar, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import type { BioPassRecord } from '../../types/biopass';
 import { biopassService } from '../../services/biopassService';
@@ -11,7 +11,6 @@ import CommodityStep from './components/CommodityStep';
 import GeolocationStep from './components/GeolocationStep';
 import ContactsCollectionStep from './components/ContactsCollectionStep';
 import RiskAssessmentStep from './components/RiskAssessmentStep';
-
 import DeclarationStep from './components/DeclarationStep';
 
 const steps = [
@@ -22,39 +21,65 @@ const steps = [
   'Declaration'
 ];
 
+const emptyRecord = (id: string, userId: string): Partial<BioPassRecord> => ({
+  id,
+  userId,
+  commodity: {
+    type: '',
+    description: '',
+    quantity: 0,
+    unit: 'Tonnes',
+    productionCountry: '',
+    productionYear: new Date().getFullYear().toString(),
+    companyName: '',
+    address: '',
+  },
+  supplyChain: [],
+  plots: [],
+  evidence: [],
+  riskAssessment: [],
+  status: 'Draft',
+});
+
 const BioPassWizard: React.FC = () => {
   const navigate = useNavigate();
+  const { id: paramId } = useParams<{ id?: string }>();
   const { currentUser } = useAuth();
 
-  const recordId = React.useRef(uuidv4()).current;
+  // Use the param ID if editing an existing record, otherwise generate a new one
+  const recordId = React.useRef(paramId ?? uuidv4()).current;
+  const isEditing = Boolean(paramId);
 
   const [activeStep, setActiveStep] = useState(0);
-  const [recordData, setRecordData] = useState<Partial<BioPassRecord>>({
-    id: recordId,
-    userId: currentUser?.uid ?? 'anonymous',
-    commodity: {
-      type: '',
-      description: '',
-      quantity: 0,
-      unit: 'Tonnes',
-      productionCountry: '',
-      productionYear: new Date().getFullYear().toString(),
-      companyName: '',
-      address: ''
-    },
-    supplyChain: [],
-    plots: [],
-    evidence: [],
-    riskAssessment: [],
-    status: 'Draft'
-  });
+  const [recordData, setRecordData] = useState<Partial<BioPassRecord>>(
+    emptyRecord(recordId, currentUser?.uid ?? 'anonymous')
+  );
+  const [loadingRecord, setLoadingRecord] = useState(isEditing);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
-    severity: 'success'
+    severity: 'success',
   });
+
+  // When editing, load the existing record from Firestore
+  useEffect(() => {
+    if (!isEditing) return;
+    setLoadingRecord(true);
+    biopassService
+      .getRecord(recordId)
+      .then((existing) => {
+        if (existing) {
+          setRecordData(existing);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load record:', err);
+        showSnackbar('Failed to load draft. Please try again.', 'error');
+      })
+      .finally(() => setLoadingRecord(false));
+  }, [recordId, isEditing]);
 
   const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -64,7 +89,7 @@ const BioPassWizard: React.FC = () => {
   const handleBack = () => setActiveStep((s) => s - 1);
 
   const handleUpdateData = (key: keyof BioPassRecord, data: any) => {
-    setRecordData(prev => ({ ...prev, [key]: data }));
+    setRecordData((prev) => ({ ...prev, [key]: data }));
   };
 
   const handleSaveDraft = async () => {
@@ -93,7 +118,6 @@ const BioPassWizard: React.FC = () => {
         userId: currentUser?.uid ?? 'anonymous',
       });
 
-      // Generate Exports
       generateComplianceDataJSON(recordData);
       generateFarmBoundaryGeoJSON(recordData);
       generateComplianceReportPDF(recordData);
@@ -124,10 +148,18 @@ const BioPassWizard: React.FC = () => {
     }
   };
 
+  if (loadingRecord) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 2, pb: 10, maxWidth: 800, margin: '0 auto' }}>
       <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-        BioPass Declaration
+        {isEditing ? 'Continue Draft' : 'BioPass Declaration'}
       </Typography>
 
       <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4, display: { xs: 'none', md: 'flex' } }}>
@@ -194,11 +226,11 @@ const BioPassWizard: React.FC = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
-        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
-          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
