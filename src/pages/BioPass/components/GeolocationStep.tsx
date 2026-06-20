@@ -180,7 +180,7 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <MapClickHandler onMapClick={handleMapClick} disabled={!isDrawing || drawMode !== 'manual'} />
-              
+
               {/* Draw current boundary points */}
               {currentPoints.map((pos, idx) => (
                 <Marker key={idx} position={pos} />
@@ -229,7 +229,7 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                 <Button variant="outlined" color="error" onClick={handleCancelDrawing}>
                   Cancel
                 </Button>
-                
+
                 <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
                   {isTrackingGPS ? (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -248,9 +248,9 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
             )}
           </Box>
         </Grid>
- 
+
         <Grid size={{ xs: 12, md: 4 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold',  mb: 2  }}>Saved Plots</Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>Saved Plots</Typography>
           {data.length === 0 ? (
             <Typography variant="body2" color="textSecondary">No plots added yet.</Typography>
           ) : (
