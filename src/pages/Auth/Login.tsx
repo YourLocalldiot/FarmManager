@@ -40,11 +40,28 @@ export default function Login() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   useEffect(() => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible'
-      });
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {
+        console.error('Failed to clear existing recaptcha verifier:', e);
+      }
     }
+
+    const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible'
+    });
+    window.recaptchaVerifier = verifier;
+
+    return () => {
+      try {
+        verifier.clear();
+      } catch (e) {
+        console.error('Failed to clear recaptcha verifier on unmount:', e);
+      }
+      // @ts-ignore
+      window.recaptchaVerifier = undefined;
+    };
   }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {

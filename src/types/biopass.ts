@@ -57,6 +57,21 @@ export interface DeclarationData {
   userId: string;
 }
 
+export interface LandCertificateData {
+  certificateNumber: string;
+  ownerName: string;
+  issueDate: string;
+  declaredArea: number;
+  fileUrl: string;
+}
+
+export interface CarbonCreditStats {
+  estimatedStock: number;       // tonnes of Carbon
+  annualSequestration: number;  // tonnes of CO2 per year
+  creditValueVND: number;       // Value in VND
+  creditValueUSD: number;       // Value in USD
+}
+
 export interface BioPassRecord {
   id: string;
   createdAt: string;
@@ -70,4 +85,8 @@ export interface BioPassRecord {
   riskAssessment?: RiskAssessmentAnswer[];
   mitigation?: MitigationAction[];
   declaration?: DeclarationData;
+  certificate?: LandCertificateData;
+  geeStatus?: 'Valid' | 'Deforested' | 'Pending';
+  carbonCredits?: CarbonCreditStats;
 }
+

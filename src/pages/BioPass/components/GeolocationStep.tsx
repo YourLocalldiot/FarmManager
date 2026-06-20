@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, Card, CardContent, Grid, TextField, IconButton } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import { Box, Typography, Button, Card, CardContent, Grid, TextField, IconButton, ButtonGroup, Alert } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { MapContainer, TileLayer, Marker, Polygon, useMapEvents } from 'react-leaflet';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
+import MapIcon from '@mui/icons-material/Map';
+import StopIcon from '@mui/icons-material/Stop';
+import { MapContainer, TileLayer, Marker, Polygon, useMapEvents, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import * as turf from '@turf/turf';
@@ -21,10 +24,12 @@ interface GeolocationStepProps {
   updateData: (data: PlotData[]) => void;
 }
 
-const MapClickHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void }> = ({ onMapClick }) => {
+const MapClickHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void; disabled: boolean }> = ({ onMapClick, disabled }) => {
   useMapEvents({
     click(e: any) {
-      onMapClick(e.latlng);
+      if (!disabled) {
+        onMapClick(e.latlng);
+      }
     },
   });
   return null;
@@ -34,16 +39,71 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
   const [currentPoints, setCurrentPoints] = useState<L.LatLng[]>([]);
   const [plotName, setPlotName] = useState('');
   const [isDrawing, setIsDrawing] = useState(false);
+  const [drawMode, setDrawMode] = useState<'manual' | 'gps'>('manual');
+  const [isTrackingGPS, setIsTrackingGPS] = useState(false);
+  const [currentGPSPosition, setCurrentGPSPosition] = useState<L.LatLng | null>(null);
+  const [gpsError, setGpsError] = useState('');
+
+  const watchIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
 
   const handleMapClick = (latlng: L.LatLng) => {
-    if (isDrawing) {
+    if (isDrawing && drawMode === 'manual') {
       setCurrentPoints((prev) => [...prev, latlng]);
     }
   };
 
-  const handleStartDrawing = () => {
+  const handleStartDrawing = (mode: 'manual' | 'gps') => {
     setIsDrawing(true);
+    setDrawMode(mode);
     setCurrentPoints([]);
+    setGpsError('');
+
+    if (mode === 'gps') {
+      if (!navigator.geolocation) {
+        setGpsError('Geolocation is not supported by your browser.');
+        setIsDrawing(false);
+        return;
+      }
+
+      setIsTrackingGPS(true);
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const newLatLng = new L.LatLng(latitude, longitude);
+          setCurrentGPSPosition(newLatLng);
+
+          setCurrentPoints((prev) => {
+            if (prev.length === 0) {
+              return [newLatLng];
+            }
+            const lastPoint = prev[prev.length - 1];
+            // Calculate distance using Turf (expect coordinates as [longitude, latitude])
+            const fromPoint = turf.point([lastPoint.lng, lastPoint.lat]);
+            const toPoint = turf.point([longitude, latitude]);
+            const distance = turf.distance(fromPoint, toPoint, { units: 'meters' });
+
+            // Record point if user walked 2-3 meters (allow any value >= 2m for flexibility)
+            if (distance >= 2) {
+              return [...prev, newLatLng];
+            }
+            return prev;
+          });
+        },
+        (err) => {
+          console.error('GPS tracking error:', err);
+          setGpsError(`GPS tracking failed: ${err.message}`);
+        },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+      );
+    }
   };
 
   const handleCompletePolygon = () => {
@@ -52,8 +112,13 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
       return;
     }
 
+    if (isTrackingGPS && watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      setIsTrackingGPS(false);
+    }
+
     // Convert Leaflet points to GeoJSON coordinates (longitude, latitude)
-    // Turf expects coordinates in [lng, lat] and the first point must equal the last point for a valid polygon.
     const coordinates = currentPoints.map((p) => [p.lng, p.lat]);
     coordinates.push([currentPoints[0].lng, currentPoints[0].lat]); // Close the polygon
 
@@ -79,11 +144,18 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
     setIsDrawing(false);
     setCurrentPoints([]);
     setPlotName('');
+    setCurrentGPSPosition(null);
   };
 
   const handleCancelDrawing = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
     setIsDrawing(false);
+    setIsTrackingGPS(false);
     setCurrentPoints([]);
+    setCurrentGPSPosition(null);
   };
 
   const handleRemovePlot = (id: string) => {
@@ -97,6 +169,8 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>Farm Geolocation & Boundary</Typography>
 
+      {gpsError && <Alert severity="error" sx={{ mb: 2 }}>{gpsError}</Alert>}
+
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ height: 400, width: '100%', mb: 2, border: '1px solid #ccc', borderRadius: 1, overflow: 'hidden' }}>
@@ -105,30 +179,41 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapClickHandler onMapClick={handleMapClick} />
+              <MapClickHandler onMapClick={handleMapClick} disabled={!isDrawing || drawMode !== 'manual'} />
               
-              {/* Draw current points */}
+              {/* Draw current boundary points */}
               {currentPoints.map((pos, idx) => (
                 <Marker key={idx} position={pos} />
               ))}
               {currentPoints.length > 2 && (
-                <Polygon positions={currentPoints} pathOptions={{ color: 'blue' }} />
+                <Polygon positions={currentPoints} pathOptions={{ color: 'blue', dashArray: isTrackingGPS ? '5, 5' : undefined }} />
+              )}
+
+              {/* Draw active user GPS dot if walking */}
+              {currentGPSPosition && (
+                <CircleMarker center={currentGPSPosition} radius={8} pathOptions={{ color: 'red', fillColor: '#f03', fillOpacity: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: '#fff', p: 0.5 }}>You</Typography>
+                </CircleMarker>
               )}
 
               {/* Draw saved plots */}
               {data.map((plot) => {
-                // GeoJSON coordinates are [lng, lat], Leaflet wants [lat, lng]
                 const positions = plot.geoJson.geometry.coordinates[0].map((coord: number[]) => [coord[1], coord[0]] as [number, number]);
                 return <Polygon key={plot.id} positions={positions} pathOptions={{ color: 'green' }} />;
               })}
             </MapContainer>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             {!isDrawing ? (
-              <Button variant="contained" onClick={handleStartDrawing}>
-                Draw New Plot
-              </Button>
+              <ButtonGroup variant="contained" color="primary">
+                <Button startIcon={<MapIcon />} onClick={() => handleStartDrawing('manual')}>
+                  Draw Manually
+                </Button>
+                <Button startIcon={<MyLocationIcon />} color="secondary" onClick={() => handleStartDrawing('gps')}>
+                  Start GPS Walk (2-3m interval)
+                </Button>
+              </ButtonGroup>
             ) : (
               <>
                 <TextField
@@ -136,21 +221,34 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                   label="Plot Name"
                   value={plotName}
                   onChange={(e: any) => setPlotName(e.target.value)}
+                  placeholder="e.g. Rice field A"
                 />
-                <Button variant="contained" color="success" onClick={handleCompletePolygon}>
-                  Complete Polygon
+                <Button variant="contained" color="success" onClick={handleCompletePolygon} startIcon={<StopIcon />}>
+                  Complete Plot
                 </Button>
                 <Button variant="outlined" color="error" onClick={handleCancelDrawing}>
                   Cancel
                 </Button>
-                <Typography variant="body2" color="textSecondary">
-                  Click on map to add points.
-                </Typography>
+                
+                <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {isTrackingGPS ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span className="gps-indicator" style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', backgroundColor: '#4caf50', animation: 'pulse 1.5s infinite' }} />
+                      <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
+                        Tracking: {currentPoints.length} points logged
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="textSecondary">
+                      Click on map to add points manually.
+                    </Typography>
+                  )}
+                </Box>
               </>
             )}
           </Box>
         </Grid>
-
+ 
         <Grid size={{ xs: 12, md: 4 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold',  mb: 2  }}>Saved Plots</Typography>
           {data.length === 0 ? (

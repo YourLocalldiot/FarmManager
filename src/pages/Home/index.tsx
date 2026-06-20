@@ -4,6 +4,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import { useNavigate } from 'react-router-dom';
 import { mockActivities } from '../../mock/data';
 
 const SummaryCard = ({ title, value, subtitle, icon: Icon, color }: any) => (
@@ -30,6 +31,20 @@ const SummaryCard = ({ title, value, subtitle, icon: Icon, color }: any) => (
 );
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleActionClick = (action: string) => {
+    if (action === 'Start BioPass') {
+      navigate('/biopass/new');
+    } else if (action === 'Check Market') {
+      navigate('/quant');
+    } else if (action === 'Find Buyers') {
+      navigate('/salvager');
+    } else if (action === 'View Reports') {
+      navigate('/biopass');
+    }
+  };
+
   return (
     <Box sx={{ p: 2, pb: 10 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -89,7 +104,7 @@ const Home: React.FC = () => {
         {['Start BioPass', 'Check Market', 'Find Buyers', 'View Reports'].map((action, index) => (
           <Grid size={6} key={index}>
             <Card sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-              <CardActionArea sx={{ p: 2, textAlign: 'center' }}>
+              <CardActionArea sx={{ p: 2, textAlign: 'center' }} onClick={() => handleActionClick(action)}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{action}</Typography>
               </CardActionArea>
             </Card>

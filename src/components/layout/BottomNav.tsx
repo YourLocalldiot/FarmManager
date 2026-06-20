@@ -11,11 +11,20 @@ const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const getNavValue = () => {
+    const path = location.pathname;
+    if (path.startsWith('/biopass')) return '/biopass';
+    if (path.startsWith('/quant')) return '/quant';
+    if (path.startsWith('/salvager')) return '/salvager';
+    if (path.startsWith('/future')) return '/future';
+    return '/';
+  };
+
   return (
     <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000 }} elevation={3}>
       <BottomNavigation
         showLabels
-        value={location.pathname}
+        value={getNavValue()}
         onChange={(_, newValue) => {
           navigate(newValue);
         }}

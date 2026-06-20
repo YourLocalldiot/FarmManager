@@ -43,6 +43,15 @@ export const generateComplianceDataJSON = (
     dateOfDeclaration: new Date().toISOString(),
   };
 
+  // ── Land Certificate Information ───────────────────────────────────────────
+  const landCertificate = record.certificate ? {
+    certificateNumber: record.certificate.certificateNumber,
+    ownerName:         record.certificate.ownerName,
+    issueDate:         record.certificate.issueDate,
+    declaredAreaHa:    record.certificate.declaredArea,
+    documentUrl:       record.certificate.fileUrl,
+  } : null;
+
   // ── Product Information ────────────────────────────────────────────────────
   const product = {
     product:         record.commodity?.type        ?? null,
@@ -69,14 +78,18 @@ export const generateComplianceDataJSON = (
     features,
   };
 
+  // ── GEE Verification & Carbon Stats ────────────────────────────────────────
+  const complianceVerification = {
+    geeStatus: record.geeStatus ?? 'Pending',
+    isEUDREligible: record.geeStatus === 'Valid',
+    carbonCredits: record.carbonCredits ? {
+      estimatedCarbonStock_tC: record.carbonCredits.estimatedStock,
+      annualSequestration_tCO2: record.carbonCredits.annualSequestration,
+      annualCreditValueUSD: record.carbonCredits.creditValueUSD,
+    } : null
+  };
+
   // ── Risk Assessment ────────────────────────────────────────────────────────
-  // Question mapping (from RiskAssessmentStep.tsx):
-  //   q1 → NearProtectedArea
-  //   q2 → IndigenousAffected
-  //   q3 → (deforestation question – mapped to DeforestationRisk placeholder)
-  //   q4 → LegalityConcerns
-  //   q5 → SupplyChainGaps
-  //   q6 → PreviousNonCompliance
   const ra = record.riskAssessment;
   const riskAssessment = {
     NearProtectedArea:    riskBool(ra, 'q1'),
@@ -84,14 +97,16 @@ export const generateComplianceDataJSON = (
     LegalityConcerns:     riskBool(ra, 'q4'),
     SupplyChainGaps:      riskBool(ra, 'q5'),
     PreviousNonCompliance: riskBool(ra, 'q6'),
-    DeforestationRisk:    null as boolean | null, // To be developed
+    DeforestationRisk:    record.geeStatus === 'Deforested',
   };
 
   // ── Final structured output ────────────────────────────────────────────────
   const output = {
     supplierInformation: supplier,
+    landCertificate,
     productInformation:  product,
     geolocationData:     geolocation,
+    complianceVerification,
     riskAssessment,
   };
 
@@ -152,6 +167,21 @@ export const generateComplianceReportPDF = (
     theme: 'grid',
   });
 
+  // ── Land Registry Certificate ──────────────────────────────────────────────
+  const y_cert = (doc as any).lastAutoTable.finalY + 10;
+  doc.setFontSize(14);
+  doc.text('Land Registry Information (Sổ Đỏ)', 14, y_cert);
+  autoTable(doc, {
+    startY: y_cert + 4,
+    body: [
+      ['Certificate Number', record.certificate?.certificateNumber ?? '—'],
+      ['Registered Owner',   record.certificate?.ownerName ?? '—'],
+      ['Issue Date',         record.certificate?.issueDate ?? '—'],
+      ['Declared Area (ha)', String(record.certificate?.declaredArea ?? '—')],
+    ],
+    theme: 'grid',
+  });
+
   // ── Product Information ────────────────────────────────────────────────────
   const y1 = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(14);
@@ -188,6 +218,22 @@ export const generateComplianceReportPDF = (
     doc.text('No geolocation data provided.', 14, y2 + 12);
   }
 
+  // ── GEE Verification & Carbon Stats ────────────────────────────────────────
+  const y_gee = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : y2 + 25;
+  doc.setFontSize(14);
+  doc.text('GEE Compliance & Carbon Metrics', 14, y_gee);
+  autoTable(doc, {
+    startY: y_gee + 4,
+    body: [
+      ['GEE Deforestation Check (Dec 31, 2020)', record.geeStatus === 'Valid' ? 'HỢP LỆ (Compliant - No Forest)' : 'KHÔNG HỢP LỆ (Non-Compliant - Deforested)'],
+      ['EU Export Status',                        record.geeStatus === 'Valid' ? 'APPROVED / CHO PHÉP' : 'LOCKED / BỊ KHÓA (Non-Compliant)'],
+      ['Biomass Carbon Stock',                    record.carbonCredits ? `${record.carbonCredits.estimatedStock} tC` : '—'],
+      ['Annual Sequestration',                    record.carbonCredits ? `${record.carbonCredits.annualSequestration} tCO2/yr` : '—'],
+      ['Est. Offset Annual Value',                record.carbonCredits ? `$${record.carbonCredits.creditValueUSD} (~${(record.carbonCredits.creditValueVND / 1000000).toFixed(2)}M VND)` : '—'],
+    ],
+    theme: 'grid',
+  });
+
   // ── Risk Assessment ────────────────────────────────────────────────────────
   doc.addPage();
   doc.setFontSize(14);
@@ -205,7 +251,7 @@ export const generateComplianceReportPDF = (
       ['Legality Concerns',       fmt(riskBool(ra, 'q4'))],
       ['Supply Chain Gaps',       fmt(riskBool(ra, 'q5'))],
       ['Previous Non-Compliance', fmt(riskBool(ra, 'q6'))],
-      ['Deforestation Risk',      'To be developed'],
+      ['Deforestation Risk (GEE Classification)', record.geeStatus === 'Deforested' ? 'Yes (Deforested Plot)' : 'No (Compliant)'],
     ],
     theme: 'grid',
   });
@@ -218,6 +264,11 @@ export const generateComplianceReportPDF = (
   doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, y3 + 6);
   if (record.declaration?.signatureUrl) {
     doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, y3 + 12);
+    try {
+      doc.addImage(record.declaration.signatureUrl, 'PNG', 14, y3 + 16, 50, 18);
+    } catch (e) {
+      console.error('Failed to embed signature in PDF:', e);
+    }
   }
 
   doc.save('compliance_report.pdf');

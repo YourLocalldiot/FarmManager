@@ -7,16 +7,18 @@ import { biopassService } from '../../services/biopassService';
 import { generateComplianceDataJSON, generateFarmBoundaryGeoJSON, generateComplianceReportPDF } from '../../utils/exportUtils';
 import { useAuth } from '../../contexts/AuthContext';
 
+import CertificateUploadStep from './components/CertificateUploadStep';
 import CommodityStep from './components/CommodityStep';
 import GeolocationStep from './components/GeolocationStep';
-import ContactsCollectionStep from './components/ContactsCollectionStep';
+import GEEAnalysisStep from './components/GEEAnalysisStep';
 import RiskAssessmentStep from './components/RiskAssessmentStep';
 import DeclarationStep from './components/DeclarationStep';
 
 const steps = [
-  'Commodity Identification',
+  'Land Registry',
+  'Commodity Details',
   'Geolocation Collection',
-  'Contacts Collection',
+  'GEE Verification',
   'Risk Assessment',
   'Declaration'
 ];
@@ -24,6 +26,13 @@ const steps = [
 const emptyRecord = (id: string, userId: string): Partial<BioPassRecord> => ({
   id,
   userId,
+  certificate: {
+    certificateNumber: '',
+    ownerName: '',
+    issueDate: '',
+    declaredArea: 0,
+    fileUrl: '',
+  },
   commodity: {
     type: '',
     description: '',
@@ -39,6 +48,7 @@ const emptyRecord = (id: string, userId: string): Partial<BioPassRecord> => ({
   evidence: [],
   riskAssessment: [],
   status: 'Draft',
+  geeStatus: 'Pending',
 });
 
 const BioPassWizard: React.FC = () => {
@@ -131,18 +141,85 @@ const BioPassWizard: React.FC = () => {
     }
   };
 
+  const isNextDisabled = () => {
+    if (activeStep === 0) {
+      return (
+        !recordData.certificate?.fileUrl ||
+        !recordData.certificate?.certificateNumber?.trim() ||
+        !recordData.certificate?.ownerName?.trim() ||
+        !recordData.certificate?.issueDate
+      );
+    }
+    if (activeStep === 1) {
+      return (
+        !recordData.commodity?.companyName?.trim() ||
+        !recordData.commodity?.address?.trim() ||
+        !recordData.commodity?.type ||
+        !recordData.commodity?.quantity ||
+        !recordData.commodity?.productionCountry
+      );
+    }
+    if (activeStep === 2) {
+      return !recordData.plots || recordData.plots.length === 0;
+    }
+    if (activeStep === 3) {
+      return recordData.geeStatus === 'Pending';
+    }
+    if (activeStep === 5) {
+      return !recordData.declaration?.signatureUrl;
+    }
+    return false;
+  };
+
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
-        return <CommodityStep data={recordData.commodity} updateData={(data) => handleUpdateData('commodity', data)} />;
+        return (
+          <CertificateUploadStep
+            data={recordData.certificate}
+            updateData={(data) => handleUpdateData('certificate', data)}
+            recordId={recordId}
+          />
+        );
       case 1:
-        return <GeolocationStep data={recordData.plots} updateData={(data) => handleUpdateData('plots', data)} />;
+        return (
+          <CommodityStep
+            data={recordData.commodity}
+            updateData={(data) => handleUpdateData('commodity', data)}
+          />
+        );
       case 2:
-        return <ContactsCollectionStep />;
+        return (
+          <GeolocationStep
+            data={recordData.plots}
+            updateData={(data) => handleUpdateData('plots', data)}
+          />
+        );
       case 3:
-        return <RiskAssessmentStep data={recordData.riskAssessment} updateData={(data) => handleUpdateData('riskAssessment', data)} />;
+        return (
+          <GEEAnalysisStep
+            plots={recordData.plots}
+            geeStatus={recordData.geeStatus}
+            carbonCredits={recordData.carbonCredits}
+            updateGeeStatus={(status) => handleUpdateData('geeStatus', status)}
+            updateCarbonCredits={(stats) => handleUpdateData('carbonCredits', stats)}
+          />
+        );
       case 4:
-        return <DeclarationStep data={recordData.declaration} updateData={(data) => handleUpdateData('declaration', data)} recordId={recordId} />;
+        return (
+          <RiskAssessmentStep
+            data={recordData.riskAssessment}
+            updateData={(data) => handleUpdateData('riskAssessment', data)}
+          />
+        );
+      case 5:
+        return (
+          <DeclarationStep
+            data={recordData.declaration}
+            updateData={(data) => handleUpdateData('declaration', data)}
+            recordId={recordId}
+          />
+        );
       default:
         return <div>Unknown step</div>;
     }
@@ -211,13 +288,18 @@ const BioPassWizard: React.FC = () => {
             onClick={handleSubmit}
             variant="contained"
             color="primary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isNextDisabled()}
             startIcon={isSubmitting && <CircularProgress size={20} color="inherit" />}
           >
             {isSubmitting ? 'Submitting...' : 'Submit & Export'}
           </Button>
         ) : (
-          <Button onClick={handleNext} variant="contained" color="primary">
+          <Button 
+            onClick={handleNext} 
+            variant="contained" 
+            color="primary"
+            disabled={isNextDisabled()}
+          >
             Next
           </Button>
         )}
