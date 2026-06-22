@@ -1,9 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { BioPassRecord } from '../types/biopass';
-import type { UserProfile } from '../contexts/AuthContext';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export const downloadFile = (data: string, filename: string, type: string) => {
   const blob = new Blob([data], { type });
@@ -43,15 +40,6 @@ export const generateComplianceDataJSON = (
     dateOfDeclaration: new Date().toISOString(),
   };
 
-  // ── Land Certificate Information ───────────────────────────────────────────
-  const landCertificate = record.certificate ? {
-    certificateNumber: record.certificate.certificateNumber,
-    ownerName:         record.certificate.ownerName,
-    issueDate:         record.certificate.issueDate,
-    declaredAreaHa:    record.certificate.declaredArea,
-    documentUrl:       record.certificate.fileUrl,
-  } : null;
-
   // ── Product Information ────────────────────────────────────────────────────
   const product = {
     product:         record.commodity?.type        ?? null,
@@ -78,18 +66,14 @@ export const generateComplianceDataJSON = (
     features,
   };
 
-  // ── GEE Verification & Carbon Stats ────────────────────────────────────────
-  const complianceVerification = {
-    geeStatus: record.geeStatus ?? 'Pending',
-    isEUDREligible: record.geeStatus === 'Valid',
-    carbonCredits: record.carbonCredits ? {
-      estimatedCarbonStock_tC: record.carbonCredits.estimatedStock,
-      annualSequestration_tCO2: record.carbonCredits.annualSequestration,
-      annualCreditValueUSD: record.carbonCredits.creditValueUSD,
-    } : null
-  };
-
   // ── Risk Assessment ────────────────────────────────────────────────────────
+  // Question mapping (from RiskAssessmentStep.tsx):
+  //   q1 → NearProtectedArea
+  //   q2 → IndigenousAffected
+  //   q3 → (deforestation question – mapped to DeforestationRisk placeholder)
+  //   q4 → LegalityConcerns
+  //   q5 → SupplyChainGaps
+  //   q6 → PreviousNonCompliance
   const ra = record.riskAssessment;
   const riskAssessment = {
     NearProtectedArea:    riskBool(ra, 'q1'),
@@ -97,16 +81,14 @@ export const generateComplianceDataJSON = (
     LegalityConcerns:     riskBool(ra, 'q4'),
     SupplyChainGaps:      riskBool(ra, 'q5'),
     PreviousNonCompliance: riskBool(ra, 'q6'),
-    DeforestationRisk:    record.geeStatus === 'Deforested',
+    DeforestationRisk:    null as boolean | null, // To be developed
   };
 
   // ── Final structured output ────────────────────────────────────────────────
   const output = {
     supplierInformation: supplier,
-    landCertificate,
     productInformation:  product,
     geolocationData:     geolocation,
-    complianceVerification,
     riskAssessment,
   };
 
@@ -114,42 +96,36 @@ export const generateComplianceDataJSON = (
   downloadFile(jsonData, 'compliance_data.json', 'application/json');
 };
 
-// ─── GeoJSON Export ───────────────────────────────────────────────────────────
-
 export const generateFarmBoundaryGeoJSON = (record: Partial<BioPassRecord>) => {
-  const features = record.plots?.map((plot) => ({
+  const features = record.plots?.map(plot => ({
     type: 'Feature',
     properties: {
-      id:        plot.id,
-      name:      plot.name,
-      area:      plot.area,
-      latitude:  plot.latitude,
-      longitude: plot.longitude,
+      id: plot.id,
+      name: plot.name,
+      area: plot.area,
+      latitude: plot.latitude,
+      longitude: plot.longitude
     },
-    geometry: plot.geoJson?.geometry ?? null,
-  })) ?? [];
+    geometry: plot.geoJson.geometry
+  })) || [];
 
   const featureCollection = {
     type: 'FeatureCollection',
-    features,
+    features
   };
 
-  downloadFile(JSON.stringify(featureCollection, null, 2), 'farm_boundary.geojson', 'application/geo+json');
+  const geoJsonData = JSON.stringify(featureCollection, null, 2);
+  downloadFile(geoJsonData, 'farm_boundary.geojson', 'application/geo+json');
 };
 
-// ─── PDF Export ───────────────────────────────────────────────────────────────
-
-export const generateComplianceReportPDF = (
-  record: Partial<BioPassRecord>,
-  userProfile?: UserProfile | null
-) => {
+export const generateComplianceReportPDF = (record: Partial<BioPassRecord>) => {
   const doc = new jsPDF();
-
+  
   // Title
   doc.setFontSize(18);
-  doc.text('EUDR Due Diligence Statement', 14, 22);
-
-  // ── Supplier Information ───────────────────────────────────────────────────
+  doc.text('EUDR Due Diligence Statement Data', 14, 22);
+  
+  // Commodity Information
   doc.setFontSize(14);
   doc.text('Supplier Information', 14, 32);
   autoTable(doc, {
@@ -167,55 +143,35 @@ export const generateComplianceReportPDF = (
     theme: 'grid',
   });
 
-  // ── Land Registry Certificate ──────────────────────────────────────────────
-  const y_cert = (doc as any).lastAutoTable.finalY + 10;
-  doc.setFontSize(14);
-  doc.text('Land Registry Information (Sổ Đỏ)', 14, y_cert);
-  autoTable(doc, {
-    startY: y_cert + 4,
-    body: [
-      ['Certificate Number', record.certificate?.certificateNumber ?? '—'],
-      ['Registered Owner',   record.certificate?.ownerName ?? '—'],
-      ['Issue Date',         record.certificate?.issueDate ?? '—'],
-      ['Declared Area (ha)', String(record.certificate?.declaredArea ?? '—')],
-    ],
-    theme: 'grid',
-  });
-
-  // ── Product Information ────────────────────────────────────────────────────
-  const y1 = (doc as any).lastAutoTable.finalY + 10;
-  doc.setFontSize(14);
-  doc.text('Product Information', 14, y1);
-  autoTable(doc, {
-    startY: y1 + 4,
-    body: [
-      ['Product',          record.commodity?.type        ?? '—'],
-      ['Description',      record.commodity?.description ?? '—'],
-      ['Volume (Tonnes)',   String(record.commodity?.quantity ?? '—')],
-    ],
-    theme: 'grid',
-  });
-
-  // ── Geolocation Summary ────────────────────────────────────────────────────
-  const y2 = (doc as any).lastAutoTable.finalY + 10;
-  doc.setFontSize(14);
-  doc.text('Geolocation Data', 14, y2);
-  doc.setFontSize(10);
-  doc.text(`Country: ${record.commodity?.productionCountry ?? '—'}`, 14, y2 + 6);
-  if (record.plots && record.plots.length > 0) {
+  // Supply Chain
+  const finalY1 = (doc as any).lastAutoTable.finalY + 10;
+  doc.text('Supply Chain Mapping', 14, finalY1);
+  if (record.supplyChain && record.supplyChain.length > 0) {
     autoTable(doc, {
-      startY: y2 + 10,
-      head: [['Plot Name', 'Area (ha)', 'Latitude', 'Longitude']],
-      body: record.plots.map((p) => [
-        p.name,
-        p.area.toString(),
-        p.latitude.toFixed(6),
-        p.longitude.toFixed(6),
-      ]),
+      startY: finalY1 + 4,
+      head: [['Role', 'Company', 'Contact', 'Phone']],
+      body: record.supplyChain.map(sc => [sc.role, sc.companyName, sc.contactName || '-', sc.phoneNumber || '-']),
       theme: 'grid',
     });
   } else {
-    doc.text('No geolocation data provided.', 14, y2 + 12);
+    doc.setFontSize(10);
+    doc.text('No supply chain actors provided.', 14, finalY1 + 6);
+  }
+
+  // Farm Geolocation Summary
+  const finalY2 = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : finalY1 + 15;
+  doc.setFontSize(14);
+  doc.text('Farm Geolocation Summary', 14, finalY2);
+  if (record.plots && record.plots.length > 0) {
+    autoTable(doc, {
+      startY: finalY2 + 4,
+      head: [['Plot Name', 'Area (ha)', 'Lat', 'Lng']],
+      body: record.plots.map(p => [p.name, p.area.toString(), p.latitude.toFixed(4), p.longitude.toFixed(4)]),
+      theme: 'grid',
+    });
+  } else {
+    doc.setFontSize(10);
+    doc.text('No plots provided.', 14, finalY2 + 6);
   }
 
   // ── GEE Verification & Carbon Stats ────────────────────────────────────────
@@ -234,8 +190,11 @@ export const generateComplianceReportPDF = (
     theme: 'grid',
   });
 
-  // ── Risk Assessment ────────────────────────────────────────────────────────
+  // Add a new page for remaining sections if necessary, but autoTable handles pagination mostly
+  // For simplicity, let's just add a new page
   doc.addPage();
+  
+  // Risk Assessment
   doc.setFontSize(14);
   doc.text('Risk Assessment', 14, 20);
 
@@ -251,24 +210,20 @@ export const generateComplianceReportPDF = (
       ['Legality Concerns',       fmt(riskBool(ra, 'q4'))],
       ['Supply Chain Gaps',       fmt(riskBool(ra, 'q5'))],
       ['Previous Non-Compliance', fmt(riskBool(ra, 'q6'))],
-      ['Deforestation Risk (GEE Classification)', record.geeStatus === 'Deforested' ? 'Yes (Deforested Plot)' : 'No (Compliant)'],
+      ['Deforestation Risk',      'To be developed'],
     ],
     theme: 'grid',
   });
 
-  // ── Declaration & Signature ────────────────────────────────────────────────
-  const y3 = (doc as any).lastAutoTable.finalY + 10;
+  // Declaration
+  const finalY4 = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : finalY3 + 15;
   doc.setFontSize(14);
-  doc.text('Declaration and Signature', 14, y3);
+  doc.text('Declaration and Signature', 14, finalY4);
   doc.setFontSize(10);
-  doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, y3 + 6);
+  doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, finalY4 + 6);
+  
   if (record.declaration?.signatureUrl) {
     doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, y3 + 12);
-    try {
-      doc.addImage(record.declaration.signatureUrl, 'PNG', 14, y3 + 16, 50, 18);
-    } catch (e) {
-      console.error('Failed to embed signature in PDF:', e);
-    }
   }
 
   doc.save('compliance_report.pdf');
