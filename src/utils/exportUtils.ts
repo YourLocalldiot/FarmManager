@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { BioPassRecord } from '../types/biopass';
+import type { UserProfile } from '../contexts/AuthContext';
 
 export const downloadFile = (data: string, filename: string, type: string) => {
   const blob = new Blob([data], { type });
@@ -118,7 +119,10 @@ export const generateFarmBoundaryGeoJSON = (record: Partial<BioPassRecord>) => {
   downloadFile(geoJsonData, 'farm_boundary.geojson', 'application/geo+json');
 };
 
-export const generateComplianceReportPDF = (record: Partial<BioPassRecord>) => {
+export const generateComplianceReportPDF = (
+  record: Partial<BioPassRecord>,
+  userProfile?: UserProfile | null
+) => {
   const doc = new jsPDF();
   
   // Title
@@ -175,7 +179,7 @@ export const generateComplianceReportPDF = (record: Partial<BioPassRecord>) => {
   }
 
   // ── GEE Verification & Carbon Stats ────────────────────────────────────────
-  const y_gee = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : y2 + 25;
+  const y_gee = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : finalY2 + 25;
   doc.setFontSize(14);
   doc.text('GEE Compliance & Carbon Metrics', 14, y_gee);
   autoTable(doc, {
@@ -216,14 +220,14 @@ export const generateComplianceReportPDF = (record: Partial<BioPassRecord>) => {
   });
 
   // Declaration
-  const finalY4 = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : finalY3 + 15;
+  const finalY4 = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : 40;
   doc.setFontSize(14);
   doc.text('Declaration and Signature', 14, finalY4);
   doc.setFontSize(10);
   doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, finalY4 + 6);
   
   if (record.declaration?.signatureUrl) {
-    doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, y3 + 12);
+    doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, finalY4 + 12);
   }
 
   doc.save('compliance_report.pdf');
