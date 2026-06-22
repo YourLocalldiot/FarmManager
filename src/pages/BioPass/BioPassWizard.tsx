@@ -54,7 +54,7 @@ const emptyRecord = (id: string, userId: string): Partial<BioPassRecord> => ({
 const BioPassWizard: React.FC = () => {
   const navigate = useNavigate();
   const { id: paramId } = useParams<{ id?: string }>();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   // Use the param ID if editing an existing record, otherwise generate a new one
   const recordId = React.useRef(paramId ?? uuidv4()).current;
@@ -128,9 +128,9 @@ const BioPassWizard: React.FC = () => {
         userId: currentUser?.uid ?? 'anonymous',
       });
 
-      generateComplianceDataJSON(recordData);
+      generateComplianceDataJSON(recordData, userProfile);
       generateFarmBoundaryGeoJSON(recordData);
-      generateComplianceReportPDF(recordData);
+      generateComplianceReportPDF(recordData, userProfile);
 
       navigate('/biopass', { state: { message: 'BioPass declaration submitted successfully!' } });
     } catch (error: any) {
