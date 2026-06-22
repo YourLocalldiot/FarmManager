@@ -294,9 +294,9 @@ const BioPassWizard: React.FC = () => {
             {isSubmitting ? 'Submitting...' : 'Submit & Export'}
           </Button>
         ) : (
-          <Button 
-            onClick={handleNext} 
-            variant="contained" 
+          <Button
+            onClick={handleNext}
+            variant="contained"
             color="primary"
             disabled={isNextDisabled()}
           >
