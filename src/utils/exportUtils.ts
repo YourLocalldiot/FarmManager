@@ -31,40 +31,40 @@ export const generateComplianceDataJSON = (
 ) => {
   // ── Supplier Information ───────────────────────────────────────────────────
   const supplier = {
-    firstName:         userProfile?.firstName   ?? null,
-    middleName:        userProfile?.middleName  ?? null,
-    lastName:          userProfile?.lastName    ?? null,
-    address:           record.commodity?.address          ?? null,
-    establishmentName: record.commodity?.companyName      ?? null,
-    phoneNumber:       userProfile?.phoneNumber ?? null,
-    email:             userProfile?.email       ?? null,
+    firstName: userProfile?.firstName ?? null,
+    middleName: userProfile?.middleName ?? null,
+    lastName: userProfile?.lastName ?? null,
+    address: record.commodity?.address ?? null,
+    establishmentName: record.commodity?.companyName ?? null,
+    phoneNumber: userProfile?.phoneNumber ?? null,
+    email: userProfile?.email ?? null,
     dateOfDeclaration: new Date().toISOString(),
   };
 
   // ── Land Certificate Information ───────────────────────────────────────────
   const landCertificate = record.certificate ? {
     certificateNumber: record.certificate.certificateNumber,
-    ownerName:         record.certificate.ownerName,
-    issueDate:         record.certificate.issueDate,
-    declaredAreaHa:    record.certificate.declaredArea,
-    documentUrl:       record.certificate.fileUrl || null,
+    ownerName: record.certificate.ownerName,
+    issueDate: record.certificate.issueDate,
+    declaredAreaHa: record.certificate.declaredArea,
+    documentUrl: record.certificate.fileUrl || null,
   } : null;
 
   // ── Product Information ────────────────────────────────────────────────────
   const product = {
-    product:         record.commodity?.type        ?? null,
-    description:     record.commodity?.description ?? null,
-    volumeTonnes:    record.commodity?.quantity    ?? null,
+    product: record.commodity?.type ?? null,
+    description: record.commodity?.description ?? null,
+    volumeTonnes: record.commodity?.quantity ?? null,
   };
 
   // ── Geolocation Data ───────────────────────────────────────────────────────
   const features = record.plots?.map((plot) => ({
     type: 'Feature',
     properties: {
-      id:        plot.id,
-      name:      plot.name,
-      areaha:    plot.area,
-      latitude:  plot.latitude,
+      id: plot.id,
+      name: plot.name,
+      areaha: plot.area,
+      latitude: plot.latitude,
       longitude: plot.longitude,
     },
     geometry: plot.geoJson?.geometry ?? plot.geoJson ?? null,
@@ -90,20 +90,20 @@ export const generateComplianceDataJSON = (
   // ── Risk Assessment ────────────────────────────────────────────────────────
   const ra = record.riskAssessment;
   const riskAssessment = {
-    NearProtectedArea:    riskBool(ra, 'q1'),
-    IndigenousAffected:   riskBool(ra, 'q2'),
-    LegalityConcerns:     riskBool(ra, 'q4'),
-    SupplyChainGaps:      riskBool(ra, 'q5'),
+    NearProtectedArea: riskBool(ra, 'q1'),
+    IndigenousAffected: riskBool(ra, 'q2'),
+    LegalityConcerns: riskBool(ra, 'q4'),
+    SupplyChainGaps: riskBool(ra, 'q5'),
     PreviousNonCompliance: riskBool(ra, 'q6'),
-    DeforestationRisk:    record.geeStatus === 'Deforested',
+    DeforestationRisk: record.geeStatus === 'Deforested',
   };
 
   // ── Final structured output ────────────────────────────────────────────────
   const output = {
     supplierInformation: supplier,
     landCertificate,
-    productInformation:  product,
-    geolocationData:     geolocation,
+    productInformation: product,
+    geolocationData: geolocation,
     complianceVerification,
     riskAssessment,
   };
@@ -145,20 +145,20 @@ export const generateComplianceReportPDF = (
   doc.setFontSize(18);
   doc.text('EUDR Due Diligence Statement Data', 14, currentY);
   currentY += 10;
-  
+
   // Supplier Information
   doc.setFontSize(14);
   doc.text('Supplier Information', 14, currentY);
   autoTable(doc, {
     startY: currentY + 4,
     body: [
-      ['First Name',          userProfile?.firstName   ?? '—'],
-      ['Middle Name',         userProfile?.middleName  ?? '—'],
-      ['Last Name',           userProfile?.lastName    ?? '—'],
-      ['Address',             record.commodity?.address      ?? '—'],
-      ['Establishment Name',  record.commodity?.companyName  ?? '—'],
-      ['Phone Number',        userProfile?.phoneNumber ?? '—'],
-      ['Email',               userProfile?.email       ?? '—'],
+      ['First Name', userProfile?.firstName ?? '—'],
+      ['Middle Name', userProfile?.middleName ?? '—'],
+      ['Last Name', userProfile?.lastName ?? '—'],
+      ['Address', record.commodity?.address ?? '—'],
+      ['Establishment Name', record.commodity?.companyName ?? '—'],
+      ['Phone Number', userProfile?.phoneNumber ?? '—'],
+      ['Email', userProfile?.email ?? '—'],
       ['Date of Declaration', new Date().toLocaleDateString()],
     ],
     theme: 'grid',
@@ -172,8 +172,8 @@ export const generateComplianceReportPDF = (
     startY: currentY + 4,
     body: [
       ['Certificate Number', record.certificate?.certificateNumber ?? '—'],
-      ['Registered Owner',   record.certificate?.ownerName ?? '—'],
-      ['Issue Date',         record.certificate?.issueDate ?? '—'],
+      ['Registered Owner', record.certificate?.ownerName ?? '—'],
+      ['Issue Date', record.certificate?.issueDate ?? '—'],
       ['Declared Area (ha)', String(record.certificate?.declaredArea ?? '—')],
     ],
     theme: 'grid',
@@ -186,9 +186,9 @@ export const generateComplianceReportPDF = (
   autoTable(doc, {
     startY: currentY + 4,
     body: [
-      ['Product',          record.commodity?.type        ?? '—'],
-      ['Description',      record.commodity?.description ?? '—'],
-      ['Volume (Tonnes)',   String(record.commodity?.quantity ?? '—')],
+      ['Product', record.commodity?.type ?? '—'],
+      ['Description', record.commodity?.description ?? '—'],
+      ['Volume (Tonnes)', String(record.commodity?.quantity ?? '—')],
     ],
     theme: 'grid',
   });
@@ -237,10 +237,10 @@ export const generateComplianceReportPDF = (
     startY: currentY + 4,
     body: [
       ['GEE Deforestation Check (Dec 31, 2020)', record.geeStatus === 'Valid' ? 'HỢP LỆ (Compliant - No Forest)' : 'KHÔNG HỢP LỆ (Non-Compliant - Deforested)'],
-      ['EU Export Status',                        record.geeStatus === 'Valid' ? 'APPROVED / CHO PHÉP' : 'LOCKED / BỊ KHÓA (Non-Compliant)'],
-      ['Biomass Carbon Stock',                    record.carbonCredits ? `${record.carbonCredits.estimatedStock} tC` : '—'],
-      ['Annual Sequestration',                    record.carbonCredits ? `${record.carbonCredits.annualSequestration} tCO2/yr` : '—'],
-      ['Est. Offset Annual Value',                record.carbonCredits ? `$${record.carbonCredits.creditValueUSD} (~${(record.carbonCredits.creditValueVND / 1000000).toFixed(2)}M VND)` : '—'],
+      ['EU Export Status', record.geeStatus === 'Valid' ? 'APPROVED / CHO PHÉP' : 'LOCKED / BỊ KHÓA (Non-Compliant)'],
+      ['Biomass Carbon Stock', record.carbonCredits ? `${record.carbonCredits.estimatedStock} tC` : '—'],
+      ['Annual Sequestration', record.carbonCredits ? `${record.carbonCredits.annualSequestration} tCO2/yr` : '—'],
+      ['Est. Offset Annual Value', record.carbonCredits ? `$${record.carbonCredits.creditValueUSD} (~${(record.carbonCredits.creditValueVND / 1000000).toFixed(2)}M VND)` : '—'],
     ],
     theme: 'grid',
   });
@@ -248,7 +248,7 @@ export const generateComplianceReportPDF = (
   // Add a new page for remaining sections
   doc.addPage();
   currentY = 20;
-  
+
   // Risk Assessment
   doc.setFontSize(14);
   doc.text('Risk Assessment Summary', 14, currentY);
@@ -259,10 +259,10 @@ export const generateComplianceReportPDF = (
     startY: currentY + 4,
     head: [['Risk Factor', 'Result']],
     body: [
-      ['Near Protected Area',     fmt(riskBool(ra, 'q1'))],
+      ['Near Protected Area', fmt(riskBool(ra, 'q1'))],
       ['Indigenous Communities Affected', fmt(riskBool(ra, 'q2'))],
-      ['Legality Concerns',       fmt(riskBool(ra, 'q4'))],
-      ['Supply Chain Gaps',       fmt(riskBool(ra, 'q5'))],
+      ['Legality Concerns', fmt(riskBool(ra, 'q4'))],
+      ['Supply Chain Gaps', fmt(riskBool(ra, 'q5'))],
       ['Previous Non-Compliance', fmt(riskBool(ra, 'q6'))],
       ['Deforestation Risk (GEE Classification)', record.geeStatus === 'Deforested' ? 'Yes (Deforested Plot)' : 'No (Compliant)'],
     ],
@@ -293,7 +293,7 @@ export const generateComplianceReportPDF = (
   doc.setFontSize(10);
   doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, currentY + 6);
   currentY += 12;
-  
+
   if (record.declaration?.signatureUrl) {
     doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, currentY);
     try {
