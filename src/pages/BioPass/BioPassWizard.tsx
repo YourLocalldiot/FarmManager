@@ -144,7 +144,6 @@ const BioPassWizard: React.FC = () => {
   const isNextDisabled = () => {
     if (activeStep === 0) {
       return (
-        !recordData.certificate?.fileUrl ||
         !recordData.certificate?.certificateNumber?.trim() ||
         !recordData.certificate?.ownerName?.trim() ||
         !recordData.certificate?.issueDate
@@ -193,6 +192,7 @@ const BioPassWizard: React.FC = () => {
           <GeolocationStep
             data={recordData.plots}
             updateData={(data) => handleUpdateData('plots', data)}
+            recordId={recordId}
           />
         );
       case 3:

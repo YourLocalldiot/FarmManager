@@ -8,6 +8,48 @@ import type { DeclarationData } from '../../../types/biopass';
 import { useAuth } from '../../../contexts/AuthContext';
 import { biopassService } from '../../../services/biopassService';
 
+const trimCanvas = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const data = imgData.data;
+
+  let top = height, bottom = 0, left = width, right = 0;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const alpha = data[(y * width + x) * 4 + 3];
+      if (alpha > 0) {
+        if (x < left) left = x;
+        if (x > right) right = x;
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+      }
+    }
+  }
+
+  if (left > right || top > bottom) {
+    return canvas;
+  }
+
+  const trimmedWidth = right - left + 1;
+  const trimmedHeight = bottom - top + 1;
+
+  const trimmedCanvas = document.createElement('canvas');
+  trimmedCanvas.width = trimmedWidth;
+  trimmedCanvas.height = trimmedHeight;
+
+  const trimmedCtx = trimmedCanvas.getContext('2d');
+  if (trimmedCtx) {
+    trimmedCtx.putImageData(ctx.getImageData(left, top, trimmedWidth, trimmedHeight), 0, 0);
+  }
+
+  return trimmedCanvas;
+};
+
 interface DeclarationStepProps {
   data?: DeclarationData;
   updateData: (data: DeclarationData) => void;
@@ -55,7 +97,9 @@ const DeclarationStep: React.FC<DeclarationStepProps> = ({ data, updateData, rec
     setSignatureError('');
 
     try {
-      const dataUrl = sigCanvasRef.current.getTrimmedCanvas().toDataURL('image/png');
+      const canvas = sigCanvasRef.current.getCanvas();
+      const trimmedCanvas = trimCanvas(canvas);
+      const dataUrl = trimmedCanvas.toDataURL('image/png');
       const uploadUrl = await biopassService.uploadSignatureImage(dataUrl, recordId);
       
       updateData({

@@ -3,8 +3,6 @@ import autoTable from 'jspdf-autotable';
 import type { BioPassRecord } from '../types/biopass';
 import type { UserProfile } from '../contexts/AuthContext';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 export const downloadFile = (data: string, filename: string, type: string) => {
   const blob = new Blob([data], { type });
   const url = URL.createObjectURL(blob);
@@ -49,7 +47,7 @@ export const generateComplianceDataJSON = (
     ownerName:         record.certificate.ownerName,
     issueDate:         record.certificate.issueDate,
     declaredAreaHa:    record.certificate.declaredArea,
-    documentUrl:       record.certificate.fileUrl,
+    documentUrl:       record.certificate.fileUrl || null,
   } : null;
 
   // ── Product Information ────────────────────────────────────────────────────
@@ -69,7 +67,7 @@ export const generateComplianceDataJSON = (
       latitude:  plot.latitude,
       longitude: plot.longitude,
     },
-    geometry: plot.geoJson?.geometry ?? null,
+    geometry: plot.geoJson?.geometry ?? plot.geoJson ?? null,
   })) ?? [];
 
   const geolocation = {
@@ -114,46 +112,45 @@ export const generateComplianceDataJSON = (
   downloadFile(jsonData, 'compliance_data.json', 'application/json');
 };
 
-// ─── GeoJSON Export ───────────────────────────────────────────────────────────
-
 export const generateFarmBoundaryGeoJSON = (record: Partial<BioPassRecord>) => {
-  const features = record.plots?.map((plot) => ({
+  const features = record.plots?.map(plot => ({
     type: 'Feature',
     properties: {
-      id:        plot.id,
-      name:      plot.name,
-      area:      plot.area,
-      latitude:  plot.latitude,
-      longitude: plot.longitude,
+      id: plot.id,
+      name: plot.name,
+      area: plot.area,
+      latitude: plot.latitude,
+      longitude: plot.longitude
     },
-    geometry: plot.geoJson?.geometry ?? null,
-  })) ?? [];
+    geometry: plot.geoJson?.geometry ?? plot.geoJson
+  })) || [];
 
   const featureCollection = {
     type: 'FeatureCollection',
-    features,
+    features
   };
 
-  downloadFile(JSON.stringify(featureCollection, null, 2), 'farm_boundary.geojson', 'application/geo+json');
+  const geoJsonData = JSON.stringify(featureCollection, null, 2);
+  downloadFile(geoJsonData, 'farm_boundary.geojson', 'application/geo+json');
 };
-
-// ─── PDF Export ───────────────────────────────────────────────────────────────
 
 export const generateComplianceReportPDF = (
   record: Partial<BioPassRecord>,
   userProfile?: UserProfile | null
 ) => {
   const doc = new jsPDF();
+  let currentY = 22;
 
   // Title
   doc.setFontSize(18);
-  doc.text('EUDR Due Diligence Statement', 14, 22);
-
-  // ── Supplier Information ───────────────────────────────────────────────────
+  doc.text('EUDR Due Diligence Statement Data', 14, currentY);
+  currentY += 10;
+  
+  // Supplier Information
   doc.setFontSize(14);
-  doc.text('Supplier Information', 14, 32);
+  doc.text('Supplier Information', 14, currentY);
   autoTable(doc, {
-    startY: 36,
+    startY: currentY + 4,
     body: [
       ['First Name',          userProfile?.firstName   ?? '—'],
       ['Middle Name',         userProfile?.middleName  ?? '—'],
@@ -166,13 +163,13 @@ export const generateComplianceReportPDF = (
     ],
     theme: 'grid',
   });
+  currentY = (doc as any).lastAutoTable.finalY + 10;
 
-  // ── Land Registry Certificate ──────────────────────────────────────────────
-  const y_cert = (doc as any).lastAutoTable.finalY + 10;
+  // ── Land Registry Information (Sổ Đỏ) ──────────────────────────────────────────────
   doc.setFontSize(14);
-  doc.text('Land Registry Information (Sổ Đỏ)', 14, y_cert);
+  doc.text('Land Registry Information (Sổ Đỏ)', 14, currentY);
   autoTable(doc, {
-    startY: y_cert + 4,
+    startY: currentY + 4,
     body: [
       ['Certificate Number', record.certificate?.certificateNumber ?? '—'],
       ['Registered Owner',   record.certificate?.ownerName ?? '—'],
@@ -181,13 +178,13 @@ export const generateComplianceReportPDF = (
     ],
     theme: 'grid',
   });
+  currentY = (doc as any).lastAutoTable.finalY + 10;
 
   // ── Product Information ────────────────────────────────────────────────────
-  const y1 = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(14);
-  doc.text('Product Information', 14, y1);
+  doc.text('Product Information', 14, currentY);
   autoTable(doc, {
-    startY: y1 + 4,
+    startY: currentY + 4,
     body: [
       ['Product',          record.commodity?.type        ?? '—'],
       ['Description',      record.commodity?.description ?? '—'],
@@ -195,35 +192,49 @@ export const generateComplianceReportPDF = (
     ],
     theme: 'grid',
   });
+  currentY = (doc as any).lastAutoTable.finalY + 10;
 
   // ── Geolocation Summary ────────────────────────────────────────────────────
-  const y2 = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(14);
-  doc.text('Geolocation Data', 14, y2);
+  doc.text('Geolocation Data', 14, currentY);
   doc.setFontSize(10);
-  doc.text(`Country: ${record.commodity?.productionCountry ?? '—'}`, 14, y2 + 6);
+  doc.text(`Country: ${record.commodity?.productionCountry ?? '—'}`, 14, currentY + 6);
   if (record.plots && record.plots.length > 0) {
     autoTable(doc, {
-      startY: y2 + 10,
-      head: [['Plot Name', 'Area (ha)', 'Latitude', 'Longitude']],
-      body: record.plots.map((p) => [
-        p.name,
-        p.area.toString(),
-        p.latitude.toFixed(6),
-        p.longitude.toFixed(6),
-      ]),
+      startY: currentY + 10,
+      head: [['Plot Name', 'Area (ha)', 'Lat', 'Lng']],
+      body: record.plots.map(p => [p.name, p.area.toString(), p.latitude.toFixed(4), p.longitude.toFixed(4)]),
       theme: 'grid',
     });
+    currentY = (doc as any).lastAutoTable.finalY + 10;
   } else {
-    doc.text('No geolocation data provided.', 14, y2 + 12);
+    doc.setFontSize(10);
+    doc.text('No plots provided.', 14, currentY + 12);
+    currentY += 20;
+  }
+
+  // Supply Chain
+  doc.setFontSize(14);
+  doc.text('Supply Chain Mapping', 14, currentY);
+  if (record.supplyChain && record.supplyChain.length > 0) {
+    autoTable(doc, {
+      startY: currentY + 4,
+      head: [['Role', 'Company', 'Contact', 'Phone']],
+      body: record.supplyChain.map(sc => [sc.role, sc.companyName, sc.contactName || '-', sc.phoneNumber || '-']),
+      theme: 'grid',
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFontSize(10);
+    doc.text('No supply chain actors provided.', 14, currentY + 10);
+    currentY += 18;
   }
 
   // ── GEE Verification & Carbon Stats ────────────────────────────────────────
-  const y_gee = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : y2 + 25;
   doc.setFontSize(14);
-  doc.text('GEE Compliance & Carbon Metrics', 14, y_gee);
+  doc.text('GEE Compliance & Carbon Metrics', 14, currentY);
   autoTable(doc, {
-    startY: y_gee + 4,
+    startY: currentY + 4,
     body: [
       ['GEE Deforestation Check (Dec 31, 2020)', record.geeStatus === 'Valid' ? 'HỢP LỆ (Compliant - No Forest)' : 'KHÔNG HỢP LỆ (Non-Compliant - Deforested)'],
       ['EU Export Status',                        record.geeStatus === 'Valid' ? 'APPROVED / CHO PHÉP' : 'LOCKED / BỊ KHÓA (Non-Compliant)'],
@@ -234,16 +245,18 @@ export const generateComplianceReportPDF = (
     theme: 'grid',
   });
 
-  // ── Risk Assessment ────────────────────────────────────────────────────────
+  // Add a new page for remaining sections
   doc.addPage();
+  currentY = 20;
+  
+  // Risk Assessment
   doc.setFontSize(14);
-  doc.text('Risk Assessment', 14, 20);
-
+  doc.text('Risk Assessment Summary', 14, currentY);
   const ra = record.riskAssessment;
   const fmt = (v: boolean | null) => (v === null ? 'Unknown' : v ? 'Yes' : 'No');
 
   autoTable(doc, {
-    startY: 24,
+    startY: currentY + 4,
     head: [['Risk Factor', 'Result']],
     body: [
       ['Near Protected Area',     fmt(riskBool(ra, 'q1'))],
@@ -255,19 +268,39 @@ export const generateComplianceReportPDF = (
     ],
     theme: 'grid',
   });
+  currentY = (doc as any).lastAutoTable.finalY + 10;
 
-  // ── Declaration & Signature ────────────────────────────────────────────────
-  const y3 = (doc as any).lastAutoTable.finalY + 10;
+  // Mitigation
   doc.setFontSize(14);
-  doc.text('Declaration and Signature', 14, y3);
+  doc.text('Risk Mitigation Actions', 14, currentY);
+  if (record.mitigation && record.mitigation.length > 0) {
+    autoTable(doc, {
+      startY: currentY + 4,
+      head: [['Risk', 'Action', 'Status', 'Due Date']],
+      body: record.mitigation.map(m => [m.riskDescription, m.action, m.status, m.dueDate || '-']),
+      theme: 'grid',
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFontSize(10);
+    doc.text('No mitigation actions provided.', 14, currentY + 6);
+    currentY += 12;
+  }
+
+  // Declaration
+  doc.setFontSize(14);
+  doc.text('Declaration and Signature', 14, currentY);
   doc.setFontSize(10);
-  doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, y3 + 6);
+  doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, currentY + 6);
+  currentY += 12;
+  
   if (record.declaration?.signatureUrl) {
-    doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, y3 + 12);
+    doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, currentY);
     try {
-      doc.addImage(record.declaration.signatureUrl, 'PNG', 14, y3 + 16, 50, 18);
+      doc.addImage(record.declaration.signatureUrl, 'PNG', 14, currentY + 4, 50, 18);
     } catch (e) {
       console.error('Failed to embed signature in PDF:', e);
+      doc.text(`Signature URL: ${record.declaration.signatureUrl}`, 14, currentY + 6);
     }
   }
 

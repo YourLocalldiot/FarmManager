@@ -4,12 +4,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import MapIcon from '@mui/icons-material/Map';
 import StopIcon from '@mui/icons-material/Stop';
-import { MapContainer, TileLayer, Marker, Polygon, useMapEvents, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polygon, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import * as turf from '@turf/turf';
 import { v4 as uuidv4 } from 'uuid';
 import type { PlotData } from '../../../types/biopass';
+import { biopassService } from '../../../services/biopassService';
 
 // Fix Leaflet's default icon path issues with Webpack/Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -22,20 +23,77 @@ L.Icon.Default.mergeOptions({
 interface GeolocationStepProps {
   data?: PlotData[];
   updateData: (data: PlotData[]) => void;
+  recordId: string;
 }
 
-const MapClickHandler: React.FC<{ onMapClick: (latlng: L.LatLng) => void; disabled: boolean }> = ({ onMapClick, disabled }) => {
-  useMapEvents({
-    click(e: any) {
-      if (!disabled) {
-        onMapClick(e.latlng);
+const MapEventsHandler: React.FC<{
+  onMapClick: (latlng: L.LatLng) => void;
+  isDrawing: boolean;
+  drawMode: 'manual' | 'gps';
+}> = ({ onMapClick, isDrawing, drawMode }) => {
+  const map = useMap();
+  const onMapClickRef = useRef(onMapClick);
+  const isDrawingRef = useRef(isDrawing);
+  const drawModeRef = useRef(drawMode);
+
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+    isDrawingRef.current = isDrawing;
+    drawModeRef.current = drawMode;
+  }, [onMapClick, isDrawing, drawMode]);
+
+  useEffect(() => {
+    const handleClick = (e: L.LeafletMouseEvent) => {
+      if (isDrawingRef.current && drawModeRef.current === 'manual') {
+        onMapClickRef.current(e.latlng);
       }
-    },
-  });
+    };
+
+    map.on('click', handleClick);
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (isDrawing && drawMode === 'manual') {
+      map.doubleClickZoom.disable();
+    } else {
+      map.doubleClickZoom.enable();
+    }
+    return () => {
+      map.doubleClickZoom.enable();
+    };
+  }, [map, isDrawing, drawMode]);
+
   return null;
 };
 
-const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData }) => {
+const MapAutoBounds: React.FC<{ data: PlotData[] }> = ({ data }) => {
+  const map = useMap();
+  const hasFitBounds = useRef(false);
+
+  useEffect(() => {
+    if (data && data.length > 0 && !hasFitBounds.current) {
+      const bounds = L.latLngBounds([]);
+      data.forEach((plot) => {
+        if (plot.geoJson && plot.geoJson.geometry && plot.geoJson.geometry.coordinates) {
+          plot.geoJson.geometry.coordinates[0].forEach((coord: number[]) => {
+            bounds.extend([coord[1], coord[0]]);
+          });
+        }
+      });
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        hasFitBounds.current = true;
+      }
+    }
+  }, [map, data]);
+
+  return null;
+};
+
+const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData, recordId }) => {
   const [currentPoints, setCurrentPoints] = useState<L.LatLng[]>([]);
   const [plotName, setPlotName] = useState('');
   const [isDrawing, setIsDrawing] = useState(false);
@@ -57,6 +115,11 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
   const handleMapClick = (latlng: L.LatLng) => {
     if (isDrawing && drawMode === 'manual') {
       setCurrentPoints((prev) => [...prev, latlng]);
+      biopassService.sendCoordinateToServer(recordId, {
+        lat: latlng.lat,
+        lng: latlng.lng,
+        timestamp: new Date().toISOString()
+      });
     }
   };
 
@@ -82,6 +145,11 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
 
           setCurrentPoints((prev) => {
             if (prev.length === 0) {
+              biopassService.sendCoordinateToServer(recordId, {
+                lat: latitude,
+                lng: longitude,
+                timestamp: new Date().toISOString()
+              });
               return [newLatLng];
             }
             const lastPoint = prev[prev.length - 1];
@@ -92,6 +160,11 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
 
             // Record point if user walked 2-3 meters (allow any value >= 2m for flexibility)
             if (distance >= 2) {
+              biopassService.sendCoordinateToServer(recordId, {
+                lat: latitude,
+                lng: longitude,
+                timestamp: new Date().toISOString()
+              });
               return [...prev, newLatLng];
             }
             return prev;
@@ -147,6 +220,10 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
     setCurrentGPSPosition(null);
   };
 
+  const handleUndoLastPoint = () => {
+    setCurrentPoints((prev) => prev.slice(0, -1));
+  };
+
   const handleCancelDrawing = () => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -167,26 +244,52 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
 
   return (
     <Box>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes pulse {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(76, 175, 80, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+      `}} />
       <Typography variant="h6" sx={{ mb: 2 }}>Farm Geolocation & Boundary</Typography>
 
       {gpsError && <Alert severity="error" sx={{ mb: 2 }}>{gpsError}</Alert>}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 8 }}>
-          <Box sx={{ height: 400, width: '100%', mb: 2, border: '1px solid #ccc', borderRadius: 1, overflow: 'hidden' }}>
+          <Box 
+            sx={{ 
+              height: 400, 
+              width: '100%', 
+              mb: 2, 
+              border: '1.5px solid',
+              borderColor: 'divider',
+              borderRadius: 3, 
+              overflow: 'hidden',
+              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
+              transition: 'box-shadow 0.3s ease-in-out',
+              '&:hover': {
+                boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.12)',
+              }
+            }}
+          >
             <MapContainer center={defaultCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapClickHandler onMapClick={handleMapClick} disabled={!isDrawing || drawMode !== 'manual'} />
+              <MapEventsHandler onMapClick={handleMapClick} isDrawing={isDrawing} drawMode={drawMode} />
+              <MapAutoBounds data={data} />
 
               {/* Draw current boundary points */}
               {currentPoints.map((pos, idx) => (
-                <Marker key={idx} position={pos} />
+                <Marker key={idx} position={pos} interactive={false} />
               ))}
+              {currentPoints.length === 2 && (
+                <Polyline positions={currentPoints} interactive={false} pathOptions={{ color: 'blue', dashArray: isTrackingGPS ? '5, 5' : undefined }} />
+              )}
               {currentPoints.length > 2 && (
-                <Polygon positions={currentPoints} pathOptions={{ color: 'blue', dashArray: isTrackingGPS ? '5, 5' : undefined }} />
+                <Polygon positions={currentPoints} interactive={false} pathOptions={{ color: 'blue', dashArray: isTrackingGPS ? '5, 5' : undefined }} />
               )}
 
               {/* Draw active user GPS dot if walking */}
@@ -199,7 +302,7 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
               {/* Draw saved plots */}
               {data.map((plot) => {
                 const positions = plot.geoJson.geometry.coordinates[0].map((coord: number[]) => [coord[1], coord[0]] as [number, number]);
-                return <Polygon key={plot.id} positions={positions} pathOptions={{ color: 'green' }} />;
+                return <Polygon key={plot.id} positions={positions} interactive={false} pathOptions={{ color: 'green' }} />;
               })}
             </MapContainer>
           </Box>
@@ -225,6 +328,14 @@ const GeolocationStep: React.FC<GeolocationStepProps> = ({ data = [], updateData
                 />
                 <Button variant="contained" color="success" onClick={handleCompletePolygon} startIcon={<StopIcon />}>
                   Complete Plot
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="warning" 
+                  onClick={handleUndoLastPoint} 
+                  disabled={currentPoints.length === 0}
+                >
+                  Undo Point
                 </Button>
                 <Button variant="outlined" color="error" onClick={handleCancelDrawing}>
                   Cancel
