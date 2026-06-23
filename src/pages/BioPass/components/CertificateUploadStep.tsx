@@ -1,10 +1,6 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Grid, Card, CardContent, CircularProgress, Alert } from '@mui/material';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import type { LandCertificateData } from '../../../types/biopass';
-import { biopassService } from '../../../services/biopassService';
-
+import React from 'react';
+import { Box, Typography, TextField, Grid } from '@mui/material';
+import type { LandCertificateData, PlotData } from '../../../types/biopass';
 interface CertificateUploadStepProps {
   data?: LandCertificateData;
   updateData: (data: LandCertificateData) => void;
@@ -12,10 +8,7 @@ interface CertificateUploadStepProps {
   plots?: PlotData[];
 }
 
-const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, updateData, recordId }) => {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
-
+const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, updateData, plots }) => {
   const handleChange = (field: keyof LandCertificateData, value: any) => {
     updateData({
       certificateNumber: data?.certificateNumber ?? '',
@@ -27,25 +20,7 @@ const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, upd
     });
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    setError('');
-
-    try {
-      const file = files[0];
-      const url = await biopassService.uploadEvidenceFile(file, recordId);
-      handleChange('fileUrl', url);
-    } catch (err: any) {
-      console.error('Certificate upload error:', err);
-      setError(err.message || 'Failed to upload certificate image. Please try again.');
-    } finally {
-      setUploading(false);
-      event.target.value = '';
-    }
-  };
+  const totalArea = plots?.reduce((sum, plot) => sum + (plot.area || 0), 0) || 0;
 
   return (
     <Box>

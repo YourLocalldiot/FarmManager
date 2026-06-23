@@ -289,15 +289,14 @@ export const generateComplianceReportPDF = (
     currentY += 12;
   }
 
-  // ── Declaration & Signature ────────────────────────────────────────────────
-  const y3 = (doc as any).lastAutoTable.finalY + 10;
+  // ── Declaration ────────────────────────────────────────────────
   doc.setFontSize(14);
-  doc.text('Declaration and Signature', 14, currentY);
+  doc.text('Declaration', 14, currentY);
   doc.setFontSize(10);
-  doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, finalY4 + 6);
+  doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, currentY + 6);
   
-  if (record.declaration?.signatureUrl) {
-    doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, y3 + 12);
+  if (record.declaration?.timestamp) {
+    doc.text(`Declared at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, currentY + 12);
   }
 
   doc.save('compliance_report.pdf');
