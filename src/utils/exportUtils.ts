@@ -1,7 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { BioPassRecord } from '../types/biopass';
-import type { UserProfile } from '../contexts/AuthContext';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -133,15 +132,15 @@ export const generateComplianceReportPDF = (record: Partial<BioPassRecord>) => {
     doc.text('No mitigation actions provided.', 14, finalY3 + 6);
   }
 
-  // ── Declaration & Signature ────────────────────────────────────────────────
-  const y3 = (doc as any).lastAutoTable.finalY + 10;
+  // ── Declaration ────────────────────────────────────────────────
+  const finalY4 = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 15 : finalY3 + 15;
   doc.setFontSize(14);
   doc.text('Declaration and Signature', 14, finalY4);
   doc.setFontSize(10);
   doc.text('The information provided is accurate and complete to the best of my knowledge.', 14, finalY4 + 6);
   
-  if (record.declaration?.signatureUrl) {
-    doc.text(`Digitally signed at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, y3 + 12);
+  if (record.declaration?.timestamp) {
+    doc.text(`Declared at: ${new Date(record.declaration.timestamp).toLocaleString()}`, 14, finalY4 + 12);
   }
 
   doc.save('compliance_report.pdf');

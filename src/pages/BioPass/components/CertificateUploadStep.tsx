@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Grid, Card, CardContent, CircularProgress, Alert } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import type { LandCertificateData } from '../../../types/biopass';
+import type { LandCertificateData, PlotData } from '../../../types/biopass';
 import { biopassService } from '../../../services/biopassService';
 
 interface CertificateUploadStepProps {
   data?: LandCertificateData;
   updateData: (data: LandCertificateData) => void;
   recordId: string;
+  plots?: PlotData[];
 }
 
-const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, updateData, recordId }) => {
+const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, updateData, recordId, plots }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,6 +46,8 @@ const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, upd
       event.target.value = '';
     }
   };
+
+  const totalArea = plots?.reduce((sum, plot) => sum + (plot.area || 0), 0) || 0;
 
   return (
     <Box>
@@ -89,12 +92,10 @@ const CertificateUploadStep: React.FC<CertificateUploadStepProps> = ({ data, upd
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
-            label="Declared Area (Hectares)"
+            label="Calculated Area from Geo Collection (Hectares)"
             type="number"
-            value={data?.declaredArea || ''}
-            onChange={(e) => handleChange('declaredArea', Number(e.target.value))}
-            placeholder="e.g. 1.5"
-            required
+            value={totalArea ? totalArea.toFixed(2) : '0.00'}
+            disabled
           />
         </Grid>
 

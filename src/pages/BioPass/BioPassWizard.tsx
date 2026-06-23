@@ -166,7 +166,7 @@ const BioPassWizard: React.FC = () => {
       return recordData.geeStatus === 'Pending';
     }
     if (activeStep === 5) {
-      return !recordData.declaration?.signatureUrl;
+      return !recordData.declaration?.timestamp;
     }
     return false;
   };
@@ -179,6 +179,7 @@ const BioPassWizard: React.FC = () => {
             data={recordData.certificate}
             updateData={(data) => handleUpdateData('certificate', data)}
             recordId={recordId}
+            plots={recordData.plots}
           />
         );
       case 1:
@@ -217,7 +218,6 @@ const BioPassWizard: React.FC = () => {
           <DeclarationStep
             data={recordData.declaration}
             updateData={(data) => handleUpdateData('declaration', data)}
-            recordId={recordId}
           />
         );
       default:
