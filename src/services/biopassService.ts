@@ -11,6 +11,35 @@ const withTimeout = <T>(promise: Promise<T>, ms: number, label: string): Promise
   return Promise.race([promise, timeout]);
 };
 
+// Helper to serialize nested arrays (geoJson) to string for Firestore
+const serializeRecord = (data: Partial<BioPassRecord>): any => {
+  const payload = { ...data };
+  if (payload.plots) {
+    payload.plots = payload.plots.map(plot => ({
+      ...plot,
+      geoJson: plot.geoJson ? (typeof plot.geoJson === 'string' ? plot.geoJson : JSON.stringify(plot.geoJson)) : null
+    }));
+  }
+  return payload;
+};
+
+// Helper to deserialize stringified geoJson back to object
+const deserializeRecord = (data: any): BioPassRecord => {
+  if (data.plots) {
+    data.plots = data.plots.map((plot: any) => {
+      try {
+        return {
+          ...plot,
+          geoJson: plot.geoJson && typeof plot.geoJson === 'string' ? JSON.parse(plot.geoJson) : plot.geoJson
+        };
+      } catch (e) {
+        return plot;
+      }
+    });
+  }
+  return data as BioPassRecord;
+};
+
 export const biopassService = {
   createRecord: async (userId: string): Promise<string> => {
     const newRecordRef = doc(collection(db, 'biopass'));
@@ -27,20 +56,20 @@ export const biopassService = {
 
   saveFullRecord: async (recordId: string, data: Partial<BioPassRecord>): Promise<void> => {
     const docRef = doc(db, 'biopass', recordId);
-    const payload = {
+    const payload = serializeRecord({
       ...data,
       updatedAt: new Date().toISOString(),
-    };
+    });
     await withTimeout(setDoc(docRef, payload, { merge: true }), 8000, 'saveFullRecord');
   },
 
   // Fire-and-forget version — does not throw, does not block
   saveFullRecordBackground: (recordId: string, data: Partial<BioPassRecord>): void => {
     const docRef = doc(db, 'biopass', recordId);
-    const payload = {
+    const payload = serializeRecord({
       ...data,
       updatedAt: new Date().toISOString(),
-    };
+    });
     setDoc(docRef, payload, { merge: true }).catch((err) => {
       console.error('[biopassService] Background save failed:', err);
     });
@@ -49,7 +78,7 @@ export const biopassService = {
   getRecord: async (recordId: string): Promise<BioPassRecord | null> => {
     const docRef = doc(db, 'biopass', recordId);
     const snap = await withTimeout(getDoc(docRef), 8000, 'getRecord');
-    return snap.exists() ? (snap.data() as BioPassRecord) : null;
+    return snap.exists() ? deserializeRecord(snap.data()) : null;
   },
 
   getUserRecords: async (userId: string): Promise<BioPassRecord[]> => {
@@ -58,7 +87,7 @@ export const biopassService = {
       where('userId', '==', userId)
     );
     const snap = await withTimeout(getDocs(q), 8000, 'getUserRecords');
-    const records = snap.docs.map((d) => d.data() as BioPassRecord);
+    const records = snap.docs.map((d) => deserializeRecord(d.data()));
     // Sort client-side to avoid requiring a Firestore composite index
     return records.sort((a, b) =>
       (b.updatedAt ?? b.createdAt ?? '').localeCompare(a.updatedAt ?? a.createdAt ?? '')
