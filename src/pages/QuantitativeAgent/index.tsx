@@ -10,7 +10,7 @@ const QuantitativeAgent: React.FC = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <AutoGraphIcon color="primary" sx={{ mr: 1, fontSize: 28 }} />
         <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          Quant Agent
+          Intelligent Agent
         </Typography>
       </Box>
 

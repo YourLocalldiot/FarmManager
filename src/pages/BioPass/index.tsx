@@ -129,31 +129,60 @@ const BioPass: React.FC = () => {
         </Card>
       )}
 
-      {/* ── Big CTA button ── */}
-      <Button
-        variant="contained"
-        color="primary"
-        fullWidth
-        size="large"
-        startIcon={<AddIcon />}
-        onClick={() => navigate('/biopass/new')}
-        sx={{
-          py: 2.2,
-          borderRadius: 3,
-          fontSize: '1.05rem',
-          fontWeight: 700,
-          letterSpacing: 0.5,
-          mb: 4,
-          boxShadow: '0 4px 20px rgba(46,125,50,0.35)',
-          background: 'linear-gradient(135deg, #2e7d32 0%, #43a047 100%)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)',
-            boxShadow: '0 6px 24px rgba(46,125,50,0.45)',
-          },
-        }}
-      >
-        New Declaration
-      </Button>
+      {/* ── Action Buttons ── */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          size="large"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/biopass/new')}
+          sx={{
+            py: 2.2,
+            borderRadius: 3,
+            fontSize: '1.05rem',
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            boxShadow: '0 4px 20px rgba(46,125,50,0.35)',
+            background: 'linear-gradient(135deg, #2e7d32 0%, #43a047 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)',
+              boxShadow: '0 6px 24px rgba(46,125,50,0.45)',
+            },
+          }}
+        >
+          New Declaration
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="primary"
+          fullWidth
+          startIcon={<DescriptionIcon />}
+          onClick={() => {
+            const docContent = "BioPass Documentation\n\n1. Geolocation Collection:\n- Ensure accuracy of boundary points.\n- Submit coordinates conforming to EUDR standards.\n\n2. GEE Verification:\n- The system will check the polygon against deforestation maps (post-2020).\n- Results are categorized as Valid or Deforested.";
+            const blob = new Blob([docContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Geolocation_GEE_Docs.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+          sx={{
+            py: 1.5,
+            borderRadius: 3,
+            fontWeight: 600,
+            borderWidth: 2,
+            '&:hover': { borderWidth: 2 }
+          }}
+        >
+          Download Documentation (Geo & GEE)
+        </Button>
+      </Box>
 
       {/* ── Records panel ── */}
       <Card sx={{ borderRadius: 3 }}>

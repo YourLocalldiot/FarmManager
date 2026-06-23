@@ -2,9 +2,7 @@ import React from 'react';
 import { Paper, BottomNavigation, BottomNavigationAction } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import NatureIcon from '@mui/icons-material/Nature';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const BottomNav: React.FC = () => {
@@ -14,9 +12,7 @@ const BottomNav: React.FC = () => {
   const getNavValue = () => {
     const path = location.pathname;
     if (path.startsWith('/biopass')) return '/biopass';
-    if (path.startsWith('/quant')) return '/quant';
-    if (path.startsWith('/salvager')) return '/salvager';
-    if (path.startsWith('/future')) return '/future';
+    if (path.startsWith('/agent')) return '/agent';
     return '/';
   };
 
@@ -31,9 +27,7 @@ const BottomNav: React.FC = () => {
       >
         <BottomNavigationAction label="Home" value="/" icon={<HomeIcon />} />
         <BottomNavigationAction label="BioPass" value="/biopass" icon={<VerifiedUserIcon />} />
-        <BottomNavigationAction label="Quant" value="/quant" icon={<TrendingUpIcon />} />
-        <BottomNavigationAction label="Salvager" value="/salvager" icon={<NatureIcon />} />
-        <BottomNavigationAction label="Future" value="/future" icon={<RocketLaunchIcon />} />
+        <BottomNavigationAction label="Agent" value="/agent" icon={<SmartToyIcon />} />
       </BottomNavigation>
     </Paper>
   );

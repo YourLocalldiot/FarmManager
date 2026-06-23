@@ -31,7 +31,7 @@ function App() {
               <Route path="biopass" element={<BioPass />} />
               <Route path="biopass/new" element={<BioPassWizard />} />
               <Route path="biopass/:id" element={<BioPassWizard />} />
-              <Route path="quant" element={<QuantitativeAgent />} />
+              <Route path="agent" element={<QuantitativeAgent />} />
               <Route path="salvager" element={<AgriSalvager />} />
               <Route path="future" element={<Future />} />
               <Route path="profile" element={<ProfilePage />} />

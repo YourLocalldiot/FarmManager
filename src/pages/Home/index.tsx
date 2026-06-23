@@ -36,10 +36,8 @@ const Home: React.FC = () => {
   const handleActionClick = (action: string) => {
     if (action === 'Start BioPass') {
       navigate('/biopass/new');
-    } else if (action === 'Check Market') {
-      navigate('/quant');
-    } else if (action === 'Find Buyers') {
-      navigate('/salvager');
+    } else if (action === 'Ask Agent') {
+      navigate('/agent');
     } else if (action === 'View Reports') {
       navigate('/biopass');
     }
@@ -101,11 +99,11 @@ const Home: React.FC = () => {
       {/* Quick Actions */}
       <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Quick Actions</Typography>
       <Grid container spacing={2} sx={{ mb: 4 }}>
-        {['Start BioPass', 'Check Market', 'Find Buyers', 'View Reports'].map((action, index) => (
-          <Grid size={6} key={index}>
-            <Card sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-              <CardActionArea sx={{ p: 2, textAlign: 'center' }} onClick={() => handleActionClick(action)}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{action}</Typography>
+        {['Start BioPass', 'Ask Agent', 'View Reports'].map((action, index) => (
+          <Grid size={4} key={index}>
+            <Card sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', height: '100%' }}>
+              <CardActionArea sx={{ p: 2, textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => handleActionClick(action)}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>{action}</Typography>
               </CardActionArea>
             </Card>
           </Grid>
