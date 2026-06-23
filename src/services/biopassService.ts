@@ -85,4 +85,14 @@ export const biopassService = {
     );
     return await withTimeout(getDownloadURL(snapshot.ref), 8000, 'getSignatureDownloadURL');
   },
+
+  sendCoordinateToServer: async (recordId: string, point: { lat: number; lng: number; timestamp: string }): Promise<void> => {
+    console.log(`[Server] Received coordinate for record ${recordId}:`, point);
+    try {
+      const logRef = doc(collection(db, 'biopass', recordId, 'gps_logs'));
+      await setDoc(logRef, point);
+    } catch (err) {
+      console.error('[biopassService] Failed to send coordinate to simulated server:', err);
+    }
+  },
 };

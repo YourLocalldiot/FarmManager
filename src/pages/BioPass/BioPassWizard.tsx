@@ -54,7 +54,7 @@ const emptyRecord = (id: string, userId: string): Partial<BioPassRecord> => ({
 const BioPassWizard: React.FC = () => {
   const navigate = useNavigate();
   const { id: paramId } = useParams<{ id?: string }>();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
 
   // Use the param ID if editing an existing record, otherwise generate a new one
   const recordId = React.useRef(paramId ?? uuidv4()).current;
@@ -128,9 +128,9 @@ const BioPassWizard: React.FC = () => {
         userId: currentUser?.uid ?? 'anonymous',
       });
 
-      generateComplianceDataJSON(recordData);
+      generateComplianceDataJSON(recordData, userProfile);
       generateFarmBoundaryGeoJSON(recordData);
-      generateComplianceReportPDF(recordData);
+      generateComplianceReportPDF(recordData, userProfile);
 
       navigate('/biopass', { state: { message: 'BioPass declaration submitted successfully!' } });
     } catch (error: any) {
@@ -144,7 +144,6 @@ const BioPassWizard: React.FC = () => {
   const isNextDisabled = () => {
     if (activeStep === 0) {
       return (
-        !recordData.certificate?.fileUrl ||
         !recordData.certificate?.certificateNumber?.trim() ||
         !recordData.certificate?.ownerName?.trim() ||
         !recordData.certificate?.issueDate
@@ -194,6 +193,7 @@ const BioPassWizard: React.FC = () => {
           <GeolocationStep
             data={recordData.plots}
             updateData={(data) => handleUpdateData('plots', data)}
+            recordId={recordId}
           />
         );
       case 3:
@@ -294,9 +294,9 @@ const BioPassWizard: React.FC = () => {
             {isSubmitting ? 'Submitting...' : 'Submit & Export'}
           </Button>
         ) : (
-          <Button 
-            onClick={handleNext} 
-            variant="contained" 
+          <Button
+            onClick={handleNext}
+            variant="contained"
             color="primary"
             disabled={isNextDisabled()}
           >

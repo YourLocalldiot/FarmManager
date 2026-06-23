@@ -3,6 +3,7 @@ import { Box, Typography, Checkbox, FormControlLabel, Paper } from '@mui/materia
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import type { DeclarationData } from '../../../types/biopass';
 import { useAuth } from '../../../contexts/AuthContext';
+import { biopassService } from '../../../services/biopassService';
 
 interface DeclarationStepProps {
   data?: DeclarationData;
@@ -40,6 +41,39 @@ const DeclarationStep: React.FC<DeclarationStepProps> = ({ data, updateData }) =
         userId: ''
       });
     }
+  };
+
+  const handleSaveSignature = async () => {
+    if (!sigCanvasRef.current || sigCanvasRef.current.isEmpty()) {
+      setSignatureError('Please draw your signature before saving.');
+      return;
+    }
+
+    setUploading(true);
+    setSignatureError('');
+
+    try {
+      const dataUrl = sigCanvasRef.current.getTrimmedCanvas().toDataURL('image/png');
+      const uploadUrl = await biopassService.uploadSignatureImage(dataUrl, recordId);
+      
+      updateData({
+        signatureUrl: uploadUrl,
+        timestamp: new Date().toISOString(),
+        userId: currentUser?.uid ?? 'anonymous'
+      });
+    } catch (err: any) {
+      console.error('Signature upload error:', err);
+      setSignatureError(err.message || 'Failed to save signature. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleClearSignature = () => {
+    if (sigCanvasRef.current) {
+      sigCanvasRef.current.clear();
+    }
+    setSignatureError('');
   };
 
   const displayName = userProfile

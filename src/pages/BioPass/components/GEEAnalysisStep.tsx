@@ -54,11 +54,11 @@ const GEEAnalysisStep: React.FC<GEEAnalysisStepProps> = ({
         } else if (next === 90) {
           setScanMessage('Calculating biomass density and canopy thickness...');
         }
-        
+
         if (next >= 100) {
           clearInterval(interval);
           setAnalyzing(false);
-          
+
           // Complete analysis based on simulation switch
           const finalStatus = simulateDeforestation ? 'Deforested' : 'Valid';
           updateGeeStatus(finalStatus);
@@ -105,7 +105,7 @@ const GEEAnalysisStep: React.FC<GEEAnalysisStepProps> = ({
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Google Earth Engine (GEE) Verification</Typography>
-        
+
         {/* DEV ONLY SIMULATOR TOGGLE */}
         {!analyzing && (
           <FormControlLabel
@@ -135,7 +135,7 @@ const GEEAnalysisStep: React.FC<GEEAnalysisStepProps> = ({
           <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
             {scanMessage}
           </Typography>
-          <Box sx={{ width: '100%', maxW: 400, mx: 'auto' }}>
+          <Box sx={{ width: '100%', maxWidth: 400, mx: 'auto' }}>
             <LinearProgress variant="determinate" value={scanProgress} />
           </Box>
         </Card>
@@ -192,9 +192,9 @@ const GEEAnalysisStep: React.FC<GEEAnalysisStepProps> = ({
                         <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 2 }}>
                           Distribute to domestic supermarkets and local processing traders (Est. price: 75% of EU export rate).
                         </Typography>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
+                        <Button
+                          variant="outlined"
+                          size="small"
                           startIcon={<StorefrontIcon />}
                           onClick={() => navigate('/quant')}
                         >
@@ -213,9 +213,9 @@ const GEEAnalysisStep: React.FC<GEEAnalysisStepProps> = ({
                         <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 2 }}>
                           Sell biomass residues to eco-friendly biogas generators or organic composting units.
                         </Typography>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
+                        <Button
+                          variant="outlined"
+                          size="small"
                           color="success"
                           startIcon={<RecyclingIcon />}
                           onClick={() => navigate('/salvager')}
